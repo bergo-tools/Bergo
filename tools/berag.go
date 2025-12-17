@@ -211,9 +211,6 @@ func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 	list := task.shared.GetAll()
 	usage := task.shared.GetUsage()
 	input.Output.OnSystemMsg(fmt.Sprintf("berag found %d items\ntoken usage: %v", len(list), usage.String()), berio.MsgTypeText)
-	if len(list) == 0 {
-		return &AgentOutput{Content: "can not find related content", ToolCall: input.ToolCall}
-	}
 
 	buff := bytes.NewBufferString(utils.NewTagContent(answer.Content, "summary").WholeContent)
 	buff.WriteString("\n")

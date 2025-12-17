@@ -15,23 +15,6 @@ const (
 )
 const MAX_SHELL_OUTPUT_LEN = 5000
 
-var shellCmdPrompt = `**shell_cmd**
-shell_cmd是用来运行命令的一个工具，你可以用它来运行诸如grep、ls, find等命令。支持管道操作。只接受一行命令，存在换行会截断
-用法:
-<shell_cmd>command</shell_cmd>
-
-例如:
-当你想运行命令"git status"时，你可以这样调用:
-<shell_cmd>git status</shell_cmd>
-
-结果会包裹在<shell_cmd>中，示例如下，第一行是你调用的命令，之后是结果：
-<shell_cmd>
-## git status:
-On branch main
-Your branch is up to date with 'origin/main'.
-</shell_cmd>
-`
-
 func ShellCommand(ctx context.Context, input *AgentInput) *AgentOutput {
 	stub := &ShellCmdToolResult{}
 	json.Unmarshal([]byte(input.ToolCall.Function.Arguments), stub)
@@ -69,7 +52,7 @@ func ShellCmdSchema() *llm.ToolSchema {
 		Type: "function",
 		Function: llm.ToolFunctionDefinition{
 			Name:        TOOL_SHELL_CMD,
-			Description: "shell_cmd是用来运行命令的一个工具，你可以用它来运行诸如grep、ls, find等命令。支持管道操作。只接受一行命令，存在换行会截断",
+			Description: "shell_cmd是用来运行命令的一个工具，你可以用它来运行诸如grep、ls, find等命令。支持管道操作。只接受一行命令，存在换行会截断，*禁止运行需要用户交互的程序，会卡死的*",
 			Parameters: llm.ToolParameters{
 				Type: "object",
 				Properties: map[string]llm.ToolProperty{

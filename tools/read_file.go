@@ -15,37 +15,6 @@ const (
 	TOOL_READ_FILE = "read_file"
 )
 
-var bergoReadFilePrompt = `**read_file**
-read_file是用来读取文件的一个工具，它会在每一行的开头添加行号。一轮响应应该只包含一次读取操作。
-用法:
-<read_file>
-path begin end
-</read_file>
-
-当你想读取整个file1时，你可以这样调用:
-<read_file>
-/path/to/file1
-</read_file>
-
-如果要读取的文件太长，你可能会遇到line_budget限制(一个阈值，确定一次可以读取的行数)。
-你可以使用begin和end参数来指定要读取的行范围。这样，你就可以读取文件中剩余的行。
-
-例如:
-当你想读取file1，从第501行开始，读取到第503行。将会返回501行到503行的内容，如果超过文件总行数，将会返回所有剩余行。
-<read_file>
-/path/to/file1 501 503
-</read_file>
-
-返回会包裹在<read_file>标签中
-实例如下,第一行是你调用read_file的参数，之外带行号的是文件内容
-<read_file>
-## /path/to/file1 501 503\n
-501|func main() {
-502|	fmt.Println("hello world")
-503|}
-</read_file>
-`
-
 func ReadFile(ctx context.Context, input *AgentInput) *AgentOutput {
 	stub := ReadFileToolResult{}
 	json.Unmarshal([]byte(input.ToolCall.Function.Arguments), &stub)

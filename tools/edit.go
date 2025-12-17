@@ -19,69 +19,6 @@ const (
 	TOOL_EDIT_DIFF  = "edit_diff"
 )
 
-var bergoEditDiffPrompt = `**edit_diff**
-edit_diff是用来编辑文件的工具，它以查找替换的模式编辑文件内容。
-当使用这个工具时，应该至少查找一行内容。因为这个工具是按照行进行替换的。
-用法:
-<edit_diff>
-<path>path of file</path>
-<search>search content</search>
-<replace>replace content</replace>
-</edit_diff>
-解析:
-<path>标签中是文件路径
-<search>标签中是你要查找的内容，不可为空，同时应该有一定的区分度，不然后导致有多处匹配,如果返回报错说有多个匹配，就再加几行来搜索
-<replace>标签中是你要替换成的内容，可以为空，空就是删除。注意缩进应该保留
-例如:
-当你想编辑文件test.go，内容如下:
-package main
-
-func foo() {
-	fmt.Println("hello world")
-}
-
-func main() {
-	foo()
-}
-
-当你想编辑foo函数的输出时
-<edit_diff>
-<path>test.go</path>
-<search>	fmt.Println("hello world")</search>
-<replace>	fmt.Println("hello bergo")</replace>
-</edit_diff>
-
-当你想编辑整个foo函数时
-<edit_diff>
-<path>test.go</path>
-<search>
-func foo() {
-	fmt.Println("hello world")
-}</search>
-<replace>
-func foo() {
-	fmt.Println("hello bergo")
-}</replace>
-</edit_diff>
-`
-
-var bergoEditWholePrompt = `**edit_whole**
-edit_whole是用来编辑文件的一个工具，它主要用于覆盖文件内容。当创建新文件时特别有用。一轮响应应该只包含一次编辑操作。
-用法:
-<edit_whole>
-<path>path of file</path>
-<replace>new content</replace>
-</edit_whole>
-解析:
-<path>标签中是文件路径，<replace>标签中是要替换的内容。
-例如:
-当你想写新内容到文件test.go时
-<edit_whole>
-<path>/test.go</path>
-<replace>new content</replace>
-</edit_whole>
-`
-
 type EditDiffToolResult struct {
 	Path    string `json:"path"`
 	Search  string `json:"search"`

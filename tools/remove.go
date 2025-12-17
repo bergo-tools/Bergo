@@ -14,15 +14,6 @@ const (
 	TOOL_REMOVE = "remove"
 )
 
-var removePrompt = `**remove**
-remove是用来删除文件或目录的一个工具，你如果想删除某个文件或者目录，必须使用这个工具来进行删除操作。不支持多行
-用法:
-<remove>path</remove>
-
-例如:
-当你想删除文件"cli/test.txt"时，你可以这样调用:
-<remove>cli/test.txt</remove>`
-
 func Remove(ctx context.Context, input *AgentInput) *AgentOutput {
 	stub := &RemoveToolResult{}
 	json.Unmarshal([]byte(input.ToolCall.Function.Arguments), stub)
