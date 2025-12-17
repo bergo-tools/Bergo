@@ -99,6 +99,13 @@ func (c *Checkpoint) Revert(hash string) error {
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return locales.Errorf("fail to revert to commit: %w, stderr output: %s", err, string(output))
 	}
+
+	cmd = exec.Command("git", "clean", "-fd")
+	cmd.Dir = shadowRepo
+	cmd.Env = os.Environ()
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return locales.Errorf("fail to clean  commit: %w, stderr output: %s", err, string(output))
+	}
 	return nil
 }
 
