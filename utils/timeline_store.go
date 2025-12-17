@@ -97,7 +97,7 @@ func (serializable *SerializableTimelineItem) ToTimelineItem() *TimelineItem {
 	case TL_Compact:
 		var compact Query
 		if err := json.Unmarshal(serializable.Data, &compact); err == nil {
-			item.Data = compact
+			item.Data = &compact
 		}
 	}
 

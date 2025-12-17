@@ -174,7 +174,7 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 		if t.Context[len(t.Context)-1].Role == "assistant" {
 			q := utils.Query{}
 			q.SetMode(t.Mode)
-			q.SetUserInput("continue your work")
+			q.SetUserInput("继续，如果确信已经结束，根据你的mode使用对应工具来结束流程")
 			t.Context = append(t.Context, &llm.ChatItem{
 				Message: q.Build(),
 				Role:    "user",
