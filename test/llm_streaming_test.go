@@ -27,7 +27,7 @@ func TestLlmStreaming(t *testing.T) {
 			},
 		},
 	}
-	config.ReadConfig("/Users/zp/Desktop/playground/github/bergo/bergo.toml")
+	config.ReadConfig("/Users/zp/Desktop/playground/Bergo/bergo.toml")
 	c := config.GlobalConfig.GetModelConfig("deepseek-chat")
 	streamer, _ := utils.NewLlmStreamer(context.Background(), c, []*llm.ChatItem{
 		{

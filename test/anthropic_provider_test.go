@@ -38,7 +38,7 @@ func TestAnthropicProviderStreamingText(t *testing.T) {
 			Role:    "system",
 		},
 		{
-			Message: "你好,能尝试调用下提供的工具吗，参数随便填.",
+			Message: "<user_input>你好,能尝试调用下提供的工具吗，参数随便填.</user_input>",
 			Role:    "user",
 		},
 	}, []*llm.ToolSchema{test_func})
