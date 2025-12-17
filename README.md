@@ -34,8 +34,7 @@ BERGO(Bot EngineeR in GO) 是一个基于 Golang 开发的 Coding Agent，它可
 - **DeepSeek**: DeepSeek系列模型
 - **Kimi**: Kimi系列模型
 - **MiniMax**: MiniMax系列模型
-- **OpenRouter**: 支持多种第三方模型
-- **Mock**: 用于测试的模拟模型
+
 
 ### 配置文件示例
 
