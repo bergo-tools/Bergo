@@ -95,6 +95,9 @@ func BergoCompleterRaw(inputStr string, cusorPos int) []*CompletionItem {
 			break
 		}
 	}
+	if cusorPos <= lastAtPos {
+		return result
+	}
 	if lastAtPos >= 0 {
 		atCmd := string(input[lastAtPos:cusorPos])
 		if strings.HasPrefix(atCmd, "@file:") {
