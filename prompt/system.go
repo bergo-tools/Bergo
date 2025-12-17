@@ -85,6 +85,7 @@ you are in ...mode, you must...
 
 ## 工作目录:
 {{.Workspace}}
+*不要编辑改动目录外的文件*
 
 ## 额外信息
 - Bergo支持多语言， 用户希望你用 {{.Language}}回复

@@ -26,6 +26,7 @@ var bergoBeragPrompt = `<mode>
 当你找到你想看的文件时，你可以并行地使用*berag_extract*工具来提取文件中的信息。注意该工具只作用于文件，而不是文件夹
 当你觉得获得足够的信息后，使用*stop_loop*工具来停止流程，并通过这个工具把工作总结返回。
 如果任务是总结性质的，那么你可以在返回结果时，多做下总结
+*这个模式下只能收集信息！禁止做文件改动！*
 </mode>
 `
 var bergoBeragExtractPrompt = `<mode>
@@ -33,6 +34,7 @@ var bergoBeragExtractPrompt = `<mode>
 你现在的任务是读取用户指定的文件，判断文件中对于解决用户问题有用的信息。比如一个需要查看的函数之类的。并使用*extract_result*工具来返回提取的信息。
 不要做查看文件以外的操作，看完后就用*extract_result*工具返回提取的信息。只看提供给你的那个文件，不需要看其他文件，因为有别的Berag Extractor并行处理文件。
 如果发现是总结性的任务，也可以不提取具体的代码片段，而是直接返回总结。
+*这个模式下只能收集信息！禁止做文件改动！*
 </mode>
 `
 var bergoCompactModePrompt = `<mode>
