@@ -67,6 +67,57 @@ reasoning_tag = "think"
 
 ```
 
+## 快速开始
+
+### 使用初始化向导
+
+Bergo提供了一个简单的初始化向导，帮助您快速创建配置文件：
+
+```bash
+# 运行初始化向导
+bergo init
+```
+
+向导会引导您完成以下步骤：
+1. 选择AI模型提供商（DeepSeek、MiniMax、Kimi、Xiaomi、OpenAI、OpenRouter）
+2. 输入API密钥
+3. 选择主模型
+4. 自动创建配置文件
+
+### 手动配置
+
+如果您想手动创建配置文件，可以参考以下示例：
+
+### 配置文件示例
+
+项目使用 `bergo.toml` 配置文件：
+
+```toml
+# 主模型
+main_model = "minimax-m2"
+# berag模型
+berag_model = "minimax-m2"
+# berag提取模型
+berag_extract_model = "minimax-m2"
+# 读取最大行数
+line_budget = 1000
+# 调试模式
+debug = false
+
+# API密钥配置，开箱即用支持3种模型供应商，deepseek/kimi/minimax
+deepseek_api_key = "your-deepseek-key"
+kimi_api_key = "your-kimi-key"
+minimax_api_key = "your-minimax-key"
+
+# 模型配置
+[[models]]
+identifier = "mock"
+provider = "mock"
+reasoning_tag = "think"
+
+
+```
+
 ## 预置命令
 
 ### 系统命令

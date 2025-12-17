@@ -1,0 +1,28 @@
+# Bergo 配置文件示例
+# 此文件由初始化向导创建
+
+# 基本配置
+debug = false
+language = "chinese"
+line_budget = 1000
+compact_threshold = 0.8
+
+# 模型配置
+main_model = "deepseek-chat"
+berag_model = "deepseek-chat"
+berag_extract_model = "deepseek-chat"
+
+# API密钥配置
+deepseek_api_key = "sk-your-deepseek-api-key-here"
+
+# 注意：您可以根据需要添加更多配置选项
+# 支持的API密钥字段：
+# - deepseek_api_key
+# - minimax_api_key  
+# - kimi_api_key
+# - xiaomi_api_key
+# - openai_api_key
+# - openrouter_api_key
+
+# 要使用更多模型，可以参考 config/default.toml 中的模型定义
+# 并在此文件中添加 [[models]] 部分

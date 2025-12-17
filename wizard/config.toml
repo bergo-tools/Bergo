@@ -1,0 +1,103 @@
+# Bergo 向导配置
+# 用于初始化向导的供应商和模型配置
+
+# 支持的提供商列表
+[[providers]]
+name = "deepseek"
+display_name = "DeepSeek"
+api_key_field = "deepseek_api_key"
+description = "DeepSeek AI模型提供商"
+default_model = "deepseek-chat"
+models = [
+    "deepseek-chat",
+    "deepseek-reasoner",
+    "自定义模型"
+]
+
+# DeepSeek推理模型映射
+[providers.reasoning_model_mapping]
+deepseek-reasoner = "deepseek-chat"
+
+[[providers]]
+name = "minimax"
+display_name = "MiniMax"
+api_key_field = "minimax_api_key"
+description = "MiniMax AI模型提供商"
+default_model = "minimax-m2"
+models = [
+    "minimax-m2",
+    "自定义模型"
+]
+
+# MiniMax推理模型映射（minimax-m2本身就是推理模型，没有对应的非推理版本）
+[providers.reasoning_model_mapping]
+# minimax-m2 = ""  # 没有对应的非推理模型
+
+[[providers]]
+name = "kimi"
+display_name = "Kimi"
+api_key_field = "kimi_api_key"
+description = "Kimi AI模型提供商"
+default_model = "kimi-k2"
+models = [
+    "kimi-k2",
+    "kimi-k2-thinking",
+    "kimi-k2-turbo",
+    "kimi-k2-thinking-turbo",
+    "自定义模型"
+]
+
+# Kimi推理模型映射
+[providers.reasoning_model_mapping]
+kimi-k2-thinking = "kimi-k2"
+kimi-k2-thinking-turbo = "kimi-k2-turbo"
+
+[[providers]]
+name = "xiaomi"
+display_name = "Xiaomi"
+api_key_field = "xiaomi_api_key"
+description = "小米AI模型提供商"
+default_model = "mimo-v2-flash"
+models = [
+    "mimo-v2-flash",
+    "mimo-v2-flash-thinking",
+    "自定义模型"
+]
+
+# Xiaomi推理模型映射
+[providers.reasoning_model_mapping]
+mimo-v2-flash-thinking = "mimo-v2-flash"
+
+[[providers]]
+name = "openai"
+display_name = "OpenAI"
+api_key_field = "openai_api_key"
+description = "OpenAI GPT系列模型"
+default_model = "gpt-4o"
+models = [
+    "gpt-4o (推荐)",
+    "gpt-4-turbo",
+    "claude-3-5-sonnet",
+    "自定义模型"
+]
+
+# OpenAI推理模型映射（OpenAI模型通常没有明确的推理/非推理区分）
+[providers.reasoning_model_mapping]
+# 可以在这里添加OpenAI的推理模型映射，如果需要的话
+
+[[providers]]
+name = "openrouter"
+display_name = "OpenRouter"
+api_key_field = "openrouter_api_key"
+description = "OpenRouter第三方模型平台"
+default_model = "gpt-4o"
+models = [
+    "gpt-4o (推荐)",
+    "gpt-4-turbo",
+    "claude-3-5-sonnet",
+    "自定义模型"
+]
+
+# OpenRouter推理模型映射
+[providers.reasoning_model_mapping]
+# 可以在这里添加OpenRouter的推理模型映射，如果需要的话
