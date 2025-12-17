@@ -67,9 +67,4 @@ func EnvInit() {
 	if !IsGitRepo() {
 		fmt.Println(locales.Sprintf("You workspace is not in a git repository"))
 	}
-	if !IsGitIgnoreHasBergo() {
-		if err := AddBergoToGitIgnore(); err != nil {
-			fmt.Println(locales.Sprintf("fail to add .bergo to .gitignore"))
-		}
-	}
 }

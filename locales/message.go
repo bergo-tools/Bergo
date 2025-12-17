@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -30,6 +31,9 @@ func (l *Locales) GetTranslation(str string) string {
 	if _, ok := l.message[l.lang][str]; !ok {
 		return str
 	}
+	if l.message[l.lang][str] == "" {
+		return str
+	}
 	return l.message[l.lang][str]
 }
 
@@ -49,10 +53,18 @@ func Sprint(str string) {
 func Errorf(format string, args ...interface{}) error {
 	return fmt.Errorf(locales.GetTranslation(format), args...)
 }
+func SetLang(lang string) {
+	locales.SetLang(lang)
+}
 func init() {
 	m := make(map[string]string)
 	if err := json.Unmarshal([]byte(simChinese), &m); err != nil {
 		panic(err)
 	}
 	locales.message["zh"] = m
+
+	lang := os.Getenv("BERGO_LANG")
+	if lang == "zh" {
+		locales.SetLang("zh")
+	}
 }

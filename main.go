@@ -293,6 +293,7 @@ func main() {
 	}
 
 	readConfig()
+
 	cli.Debug = config.GlobalConfig.Debug
 	fmt.Println(bergoTitle)
 	mp := agent.NewMainAgent()

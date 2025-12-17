@@ -26,7 +26,7 @@ func NewCheckpoint(workPath string, shadowRepoPath string) *Checkpoint {
 func (c *Checkpoint) InitShadowRepo() error {
 	// 检查workspacePath是否存在
 	if _, err := os.Stat(c.workspacePath); err != nil {
-		return locales.Errorf("workspace path %s does not exist: %w", c.workspacePath, err)
+		return locales.Errorf("workspace path %s does not exist: %v", c.workspacePath, err)
 	}
 	// 检查shadowRepoPath是否存在
 	if _, err := os.Stat(c.shadowRepoPath); err == nil {

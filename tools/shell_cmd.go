@@ -22,7 +22,7 @@ func ShellCommand(ctx context.Context, input *AgentInput) *AgentOutput {
 		res := input.Input.Select(locales.Sprintf("Are you sure to run the command: %s", stub.Command), []string{locales.Sprintf("Yes"), locales.Sprintf("Always Yes"), locales.Sprintf("Skip")})
 		if res == locales.Sprintf("Skip") {
 			return &AgentOutput{
-				Error: fmt.Errorf("user skipped"),
+				Error: fmt.Errorf("User choose to skip"),
 			}
 		}
 		if res == locales.Sprintf("Always Yes") {
