@@ -27,8 +27,11 @@ func TestAnthropicProviderStreamingText(t *testing.T) {
 			},
 		},
 	}
-	config.ReadConfig("/Users/zp/Desktop/playground/github/bergo/bergo.toml")
-	c := config.GlobalConfig.GetModelConfig("kimi-k2")
+	err := config.ReadConfig("/Users/zp/Desktop/playground/Bergo/bergo.toml")
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	c := config.GlobalConfig.GetModelConfig("mimo-v2-flash-thinking")
 	streamer, err := utils.NewLlmStreamer(context.Background(), c, []*llm.ChatItem{
 		{
 			Message: "You are a helpful assistant.",
@@ -51,4 +54,5 @@ func TestAnthropicProviderStreamingText(t *testing.T) {
 	t.Log(streamer.Signature())
 	t.Logf("token usage : %v", streamer.TokenStatics())
 	t.Log(streamer.Error())
+
 }

@@ -124,6 +124,8 @@ func ProviderFactory(modelType string) Provider {
 		return NewMinimaxProvider()
 	case "kimi":
 		return NewKimiProvider()
+	case "xiaomi":
+		return NewXiaomiProvider()
 	case "mock":
 		return NewMockProvider()
 	default:

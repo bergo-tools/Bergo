@@ -24,6 +24,7 @@ type OpenAIProvider struct {
 	presencePenalty  float64
 	maxTokens        int
 	httpClient       *http.Client
+	xiaomiThink      bool
 }
 
 type OpenAIContentPart struct {
@@ -58,6 +59,9 @@ type OpenAIChatRequest struct {
 	Stream              bool                 `json:"stream"`
 	Tools               []*ToolSchema        `json:"tools,omitempty"`
 	StreamOptions       *OpenAIStreamOptions `json:"stream_options,omitempty"`
+	Thinking            *struct {            //xiaomi options
+		Type string `json:"type,omitempty"`
+	} `json:"thinking,omitempty"`
 }
 
 type OpenAIChatChoice struct {
@@ -208,7 +212,8 @@ func (p *OpenAIProvider) convertMessages(chatItems []*ChatItem) []OpenAIChatMess
 
 // createChatRequest 创建聊天请求体
 func (p *OpenAIProvider) createChatRequest(messages []OpenAIChatMessage, tools []*ToolSchema) (*OpenAIChatRequest, error) {
-	return &OpenAIChatRequest{
+
+	req := &OpenAIChatRequest{
 		Model:               p.modelName,
 		Messages:            messages,
 		Temperature:         p.temperature,
@@ -220,7 +225,14 @@ func (p *OpenAIProvider) createChatRequest(messages []OpenAIChatMessage, tools [
 		Stream:              true,
 		Tools:               tools,
 		StreamOptions:       &OpenAIStreamOptions{IncludeUsage: true},
-	}, nil
+	}
+	if p.xiaomiThink {
+		thinkObj := &struct {
+			Type string `json:"type,omitempty"`
+		}{Type: "enabled"}
+		req.Thinking = thinkObj
+	}
+	return req, nil
 }
 
 // sendHTTPRequest 发送HTTP请求

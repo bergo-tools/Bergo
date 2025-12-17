@@ -83,7 +83,9 @@ func (s *LlmStreamer) readNewChan() {
 
 func (s *LlmStreamer) AddToolCall(toolCall *llm.ToolCall) {
 	if toolCall.ID != "" {
-		toolCall.Function.Arguments = "" //minimax会在这里放个{},无语
+		if toolCall.Function.Arguments == "{}" {
+			toolCall.Function.Arguments = "" //minimax会在这里放个{}，需要清除
+		}
 		s.toolCalls = append(s.toolCalls, toolCall)
 		return
 	}

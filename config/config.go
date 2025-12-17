@@ -17,12 +17,14 @@ type Config struct {
 	LineBudget        int            `toml:"line_budget,omitempty"`
 	Language          string         `toml:"language,omitempty"`
 	HttpProxy         string         `toml:"http_proxy,omitempty"`
-	DeepseekApiKey    string         `toml:"deepseek_api_key,omitempty"`
-	OpenaiApiKey      string         `toml:"openai_api_key,omitempty"`
-	MinimaxApiKey     string         `toml:"minimax_api_key,omitempty"`
-	OpenrouterApiKey  string         `toml:"openrouter_api_key,omitempty"`
-	KimiApiKey        string         `toml:"kimi_api_key,omitempty"`
 	CompactThreshold  float64        `toml:"compact_threshold,omitempty"`
+
+	DeepseekApiKey   string `toml:"deepseek_api_key,omitempty"`
+	OpenaiApiKey     string `toml:"openai_api_key,omitempty"`
+	MinimaxApiKey    string `toml:"minimax_api_key,omitempty"`
+	OpenrouterApiKey string `toml:"openrouter_api_key,omitempty"`
+	KimiApiKey       string `toml:"kimi_api_key,omitempty"`
+	XiaomiApiKey     string `toml:"xiaomi_api_key,omitempty"`
 }
 
 type ModelConfig struct {
@@ -144,6 +146,14 @@ func setDefault() {
 		for _, model := range GlobalConfig.Models {
 			if model.Provider == "kimi" && model.ApiKey == "" {
 				model.ApiKey = GlobalConfig.KimiApiKey
+			}
+		}
+	}
+
+	if GlobalConfig.XiaomiApiKey != "" {
+		for _, model := range GlobalConfig.Models {
+			if model.Provider == "xiaomi" && model.ApiKey == "" {
+				model.ApiKey = GlobalConfig.XiaomiApiKey
 			}
 		}
 	}
