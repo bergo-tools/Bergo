@@ -156,12 +156,13 @@ func (a *Agent) doTask(ctx context.Context) {
 		a.captureSignal(cancel)
 		content := bytes.NewBuffer(nil)
 		reasoningContent := bytes.NewBuffer(nil)
+
 		streamer, err := utils.NewLlmStreamer(ctxWithCancel, mainModelConf, chatItems, a.toolSchema)
 		if err != nil {
 			output.OnSystemMsg(locales.Sprintf("error: %v", err), berio.MsgTypeWarning)
 			break
 		}
-
+		output.OnSystemMsg(utils.LLMInputStyle("🤖Bergo: "), berio.MsgTypeDump)
 		for streamer.Next() {
 			rc, c, toolNames := streamer.ReadWithTool()
 			content.WriteString(c)
