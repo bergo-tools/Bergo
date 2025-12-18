@@ -13,7 +13,7 @@
 
 ## Bergo
 
-BERGO(Bot EngineeR in GO) 是一个基于 Golang 开发的 Coding Agent，它可以帮助开发者快速、高效地完成代码编写任务。
+BERGO(Bot EngineeR in GO) ![Bergo](https://github.com/bergo-tools/Bergo) 是一个基于 Golang 开发的 Coding Agent，它可以帮助开发者快速、高效地完成代码编写任务。
 本项目主要的代码主要由AI编写，质量比较粗糙。
 
 ## 特点
@@ -223,7 +223,7 @@ bergo init
 
 ### 功能命令
 - `/timeline` - 查看操作时间线
-- `/revert` - 回退到历史状态
+- `/revert` - 回退上个存档点
 - `/model` - 切换模型
 - `/compact` - 压缩上下文
 
