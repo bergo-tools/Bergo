@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bergo/locales"
 	"bergo/utils"
 	"fmt"
 	"strings"
@@ -396,8 +397,52 @@ type InputOptions struct {
 func (options *InputOptions) String() string {
 	width := pterm.GetTerminalWidth() * 7 / 10
 	color := lipgloss.AdaptiveColor{Dark: "#87ff00", Light: "#409C07"}
-	bergoStatus := lipgloss.NewStyle().Foreground(color).Width(width).Render(fmt.Sprintf("MainModel: %v\nSessionId: %v\nMode: %v", options.Model, options.SessionId, options.Mode))
+
+	// 构建状态信息
+	var statusLines []string
+
+	// 主模型信息
+	if options.Model != "" {
+		statusLines = append(statusLines, locales.Sprintf("MainModel: %s", options.Model))
+	}
+
+	// 会话ID
+	if options.SessionId != "" {
+		statusLines = append(statusLines, locales.Sprintf("SessionId: %s", options.SessionId))
+	}
+
+	// 模式
+	if options.Mode != "" {
+		statusLines = append(statusLines, locales.Sprintf("Mode: %s", options.Mode))
+	}
+
+	// 如果没有状态信息，返回空字符串
+	if len(statusLines) == 0 {
+		return ""
+	}
+
+	// 创建状态文本
+	statusText := strings.Join(statusLines, "\n")
+	bergoStatus := lipgloss.NewStyle().
+		Foreground(color).
+		Width(width).
+		Bold(true).
+		Render(statusText)
+
+	// 获取token使用情况
 	tokenUsage := options.Stats.String()
-	bergoStatus = lipgloss.JoinVertical(lipgloss.Left, bergoStatus, tokenUsage)
-	return lipgloss.NewStyle().Border(lipgloss.HiddenBorder()).Render(bergoStatus)
+
+	// 组合状态和token使用情况
+	content := lipgloss.JoinVertical(lipgloss.Left, bergoStatus, tokenUsage)
+
+	// 使用ThickBorder创建更美观的边框
+	return lipgloss.NewStyle().
+		Border(lipgloss.ThickBorder()).
+		BorderForeground(color).
+		Padding(0, 1).
+		BorderLeft(true).
+		BorderTop(false).
+		BorderRight(false).
+		BorderBottom(false).
+		Render(content) + "\n"
 }

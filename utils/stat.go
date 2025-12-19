@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bergo/llm"
+	"bergo/locales"
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
@@ -56,7 +57,7 @@ func (s *Stat) String() string {
 	color := lipgloss.AdaptiveColor{Dark: "#87ff00", Light: "#409C07"}
 	crossHalfColor := lipgloss.AdaptiveColor{Dark: "#ffd600ff", Light: "#a68c08ff"}
 	nearFullColor := lipgloss.AdaptiveColor{Dark: "#ff2a00ff", Light: "#a60808ff"}
-	str := fmt.Sprintf("%s %s", s.TokenUsageSession.String(), fmt.Sprintf("| windowSize: %v", formatToken(s.WindowSize)))
+	str := fmt.Sprintf("%s %s", s.TokenUsageSession.String(), locales.Sprintf("| windowSize: %v", formatToken(s.WindowSize)))
 	str = lipgloss.NewStyle().Foreground(color).Render(str)
 	if s.WindowSize <= 0 {
 		return str

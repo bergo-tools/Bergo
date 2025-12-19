@@ -21,8 +21,7 @@ func CheckAndHandleUpdates() {
 			return
 		}
 		pterm.Info.Printf("New version %v available.\n", release.TagName)
-		pterm.Info.Printf("%s\n", release.Name)
-		pterm.Info.Printf("URL %s\n", release.HTMLURL)
+		pterm.Info.Printf("URL %s\n\n", release.HTMLURL)
 		/*
 			if hasUpdate && release != nil {
 				handleUpdate(release)

@@ -1,11 +1,11 @@
 package version
 
 import (
+	"bergo/locales"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // VersionInfo 版本信息结构体
@@ -121,31 +121,13 @@ func IsNewerVersion(current, latest string) (bool, error) {
 
 // FormatVersion 格式化版本信息显示
 func FormatVersion(version, buildTime, commitHash string) string {
-	var parts []string
 
-	if version != "" {
-		parts = append(parts, fmt.Sprintf("版本: %s", version))
-	}
-
-	if buildTime != "" {
-		// 尝试解析构建时间
-		if t, err := time.Parse("2006-01-02_15:04:05", buildTime); err == nil {
-			parts = append(parts, fmt.Sprintf("构建时间: %s", t.Format("2006-01-02 15:04:05")))
-		} else {
-			parts = append(parts, fmt.Sprintf("构建时间: %s", buildTime))
-		}
-	}
-
-	if commitHash != "" && commitHash != "unknown" {
-		parts = append(parts, fmt.Sprintf("提交: %s", commitHash))
-	}
-
-	return strings.Join(parts, " | ")
+	return locales.Sprintf("Verison: %s ", version)
 }
 
 // 版本信息，通过编译时注入
 var (
-	Version    string = "v0.0.1alpha" // 版本号，格式如 v0.0.0alpha
-	BuildTime  string                 // 构建时间
-	CommitHash string                 // 提交哈希
+	Version    string // 版本号，格式如 v0.0.0alpha
+	BuildTime  string // 构建时间
+	CommitHash string // 提交哈希
 )

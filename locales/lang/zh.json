@@ -38,8 +38,10 @@
   "File: %s": "文件: %s",
   "Input error:": "输入错误:",
   "Kimi API key is required": "必须要配置Kimi API key",
+  "MainModel: %s": "主模型: %s",
   "Manual compact completed successfully": "手动压缩上下文成功",
   "Minimax API key is required": "必须要配置Minimax API key",
+  "Mode: %s": "模式: %s",
   "Model name (e.g., gpt-4, claude-3-opus): ": "AI 模型名称（例如：gpt-4, claude-3-opus）: ",
   "No valid provider selected": "未选择有效 AI 模型供应商",
   "OpenAI API key is required": "必须要配置OpenAI API key",
@@ -58,6 +60,7 @@
   "Select '%s'? Press 'y' to confirm, 'n' to cancel": "确定要选择 '%s' 吗？按 'y' 确认，按 'n' 取消",
   "Selected model: %s\n\n": "已选择 AI 模型: %s\n\n",
   "Selected: %s\n\n": "已选择: %s\n\n",
+  "SessionId: %s": "会话ID: %s",
   "Skip": "跳过",
   "Step 1/3: Select primary model provider": "步骤 1/3：选择主模型供应商",
   "Step 2/3: Enter API key": "步骤 2/3：输入 API key",
@@ -67,6 +70,7 @@
   "Switch to PLANNER mode": "切换到 PLANNER 模式",
   "Use ↑/↓ to scroll content, Enter to go details, ESC to Esc": "使用 ↑/↓ 滚动内容，Enter 查看详情，ESC 退出",
   "Use ↑/↓ to scroll content, ←/→ to select action, PgUp/PgDn/Home/End for navigation, Enter/Space to execute, ESC to go back": "使用 ↑/↓ 滚动内容，←/→ 选择操作，PgUp/PgDn/Home/End 导航，Enter/Space 执行，ESC 返回",
+  "Verison: %s ": "版本: %s ",
   "Xiaomi API key is required": "必须要配置Xiaomi API key",
   "Yes": "允许",
   "You can start Bergo with the following command:": "您可以使用以下命令启动 Bergo:",
@@ -128,5 +132,6 @@
   "switch to planner mode": "切换到 PLANNER 模式",
   "switched to %v": "已切换到 %v",
   "unknown command: %v": "未知命令: %v",
-  "workspace path %s does not exist: %v": "工作目录路径 %s 不存在: %w"
+  "workspace path %s does not exist: %v": "工作目录路径 %s 不存在: %w",
+  "| windowSize: %v": ""
 }
