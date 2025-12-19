@@ -283,7 +283,7 @@ func (t *Timeline) PrintHistory() string {
 	for _, item := range t.Items {
 		switch item.Type {
 		case TL_LLMResponse:
-			buff.WriteString(LLMInputStyle("🤖Bergo: "))
+			buff.WriteString(LLMInputStyle("🤖|Bergo: "))
 			buff.WriteString(item.Data.(*LLMResponseItem).RenderedContent)
 			buff.WriteString("\n\n")
 		case TL_UserInput:
