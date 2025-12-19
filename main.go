@@ -295,6 +295,10 @@ func main() {
 	// 显示完整的版本信息
 	versionInfo := version.FormatVersion(version.Version, version.BuildTime, version.CommitHash)
 	pterm.Info.Println(fmt.Sprintf("Version %s", versionInfo))
+	
+	// 检查更新
+	version.CheckAndHandleUpdates()
+	
 	readConfig()
 
 	cli.Debug = config.GlobalConfig.Debug

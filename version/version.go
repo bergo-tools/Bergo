@@ -1,14 +1,11 @@
 package version
 
 import (
-	"bergo/utils/cli"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pterm/pterm"
 )
 
 // VersionInfo 版本信息结构体
@@ -148,24 +145,7 @@ func FormatVersion(version, buildTime, commitHash string) string {
 
 // 版本信息，通过编译时注入
 var (
-	Version    string // 版本号，格式如 v0.0.0alpha
-	BuildTime  string // 构建时间
-	CommitHash string //
+	Version    string = "v0.0.1alpha" // 版本号，格式如 v0.0.0alpha
+	BuildTime  string                 // 构建时间
+	CommitHash string                 // 提交哈希
 )
-
-// checkForUpdates 检查更新
-func checkForUpdates() {
-	// 异步检查更新，避免阻塞主程序启动
-	hasUpdate, release, err := CheckForUpdates(Version, "bergo-tools", "Bergo")
-	if err != nil {
-		// 只在调试模式下显示错误
-		if cli.Debug {
-			pterm.Debug.Println("检查更新失败:", err)
-		}
-		return
-	}
-
-	if hasUpdate && release != nil {
-		pterm.Info.Println("发现新版本可用！")
-	}
-}

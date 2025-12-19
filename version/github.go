@@ -72,7 +72,6 @@ func CheckForUpdates(currentVersion, owner, repo string) (bool, *GitHubRelease, 
 	// 移除tag_name中的v前缀进行比较
 	latestVersion := release.TagName
 	isNewer, err := IsNewerVersion(currentVersion, latestVersion)
-	fmt.Println("latestVersion:", latestVersion, isNewer)
 	if err != nil {
 		return false, nil, fmt.Errorf("版本比较失败: %w", err)
 	}
