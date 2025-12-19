@@ -9,7 +9,7 @@ BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 COMMIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # Go build flags
-LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.commitHash=$(COMMIT_HASH)"
+LDFLAGS := -ldflags "-X bergo/version.Version=$(VERSION) -X bergo/version.BuildTime=$(BUILD_TIME) -X bergo/version.CommitHash=$(COMMIT_HASH)"
 GO_BUILD_FLAGS := -trimpath
 
 # Zig settings for CGO cross-compilation

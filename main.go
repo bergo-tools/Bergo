@@ -286,17 +286,18 @@ func readConfig() {
 
 func main() {
 	utils.EnvInit()
-
 	// 检查是否有init命令
 	if len(os.Args) > 1 && os.Args[1] == "init" {
 		RunInitWizard()
 		return
 	}
-	pterm.Info.Println(fmt.Sprintf("Version: %s", version.Version))
+	fmt.Println(bergoTitle)
+	// 显示完整的版本信息
+	versionInfo := version.FormatVersion(version.Version, version.BuildTime, version.CommitHash)
+	pterm.Info.Println(fmt.Sprintf("Version %s", versionInfo))
 	readConfig()
 
 	cli.Debug = config.GlobalConfig.Debug
-	fmt.Println(bergoTitle)
 	mp := agent.NewMainAgent()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
