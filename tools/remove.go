@@ -50,10 +50,14 @@ func Remove(ctx context.Context, input *AgentInput) *AgentOutput {
 }
 
 var RemoveToolDesc = &ToolDesc{
-	Name:       TOOL_REMOVE,
-	Intent:     locales.Sprintf("Bergo is removing file or directory"),
-	Schema:     RemoveSchema(),
-	OutputFunc: nil,
+	Name:   TOOL_REMOVE,
+	Intent: locales.Sprintf("Bergo is removing file or directory"),
+	Schema: RemoveSchema(),
+	OutputFunc: func(call *llm.ToolCall, content string) string {
+		stub := &RemoveToolResult{}
+		json.Unmarshal([]byte(call.Function.Arguments), stub)
+		return utils.InfoMessageStyle(locales.Sprintf("%s removed successfully", stub.Path))
+	},
 }
 
 type RemoveToolResult struct {

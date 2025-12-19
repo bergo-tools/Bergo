@@ -96,8 +96,16 @@ func ReadFileSchema() *llm.ToolSchema {
 }
 
 var ReadFileToolDesc = &ToolDesc{
-	Name:       TOOL_READ_FILE,
-	Intent:     locales.Sprintf("Bergo is reading file"),
-	Schema:     ReadFileSchema(),
-	OutputFunc: nil,
+	Name:   TOOL_READ_FILE,
+	Intent: locales.Sprintf("Bergo is reading file"),
+	Schema: ReadFileSchema(),
+	OutputFunc: func(call *llm.ToolCall, content string) string {
+		stub := &ReadFileToolResult{}
+		json.Unmarshal([]byte(call.Function.Arguments), stub)
+		scope := "whole file"
+		if stub.Begin > 0 || stub.End > 0 {
+			scope = fmt.Sprintf("lines %d to %d", stub.Begin, stub.End)
+		}
+		return utils.InfoMessageStyle(locales.Sprintf("read %s, %s", stub.Path, scope))
+	},
 }

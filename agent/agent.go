@@ -162,7 +162,7 @@ func (a *Agent) doTask(ctx context.Context) {
 			output.OnSystemMsg(locales.Sprintf("error: %v", err), berio.MsgTypeWarning)
 			break
 		}
-		output.OnSystemMsg(utils.LLMInputStyle("🤖Bergo: "), berio.MsgTypeDump)
+		output.OnSystemMsg(utils.LLMInputStyle("🤖|Bergo: "), berio.MsgTypeDump)
 		for streamer.Next() {
 			rc, c, toolNames := streamer.ReadWithTool()
 			content.WriteString(c)

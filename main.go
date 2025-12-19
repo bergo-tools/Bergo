@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"bergo/version"
+
 	"github.com/pelletier/go-toml"
 	"github.com/pterm/pterm"
 )
@@ -287,11 +289,10 @@ func main() {
 
 	// 检查是否有init命令
 	if len(os.Args) > 1 && os.Args[1] == "init" {
-		fmt.Println(bergoTitle)
 		RunInitWizard()
 		return
 	}
-
+	pterm.Info.Println(fmt.Sprintf("Version: %s", version.Version))
 	readConfig()
 
 	cli.Debug = config.GlobalConfig.Debug

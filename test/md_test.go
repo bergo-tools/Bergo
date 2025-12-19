@@ -3,20 +3,12 @@ package test
 import (
 	"bergo/llm"
 	"bergo/utils"
+	"fmt"
 	"testing"
-
-	"github.com/pterm/pterm"
 )
 
-var text = `
-1. xxxx1 fefwfewfewfffwefwefwe
-2. xxxxs sdssasasdddsdsq32wessdsfsfsd
-3. xxxxx  efsdfsdfwe23fwefwfewfwfqwfwfwewefwefffewfwefwefwfwf
-`
-
 func TestMd(t *testing.T) {
-
-	pterm.DefaultBox.WithBoxStyle(pterm.NewStyle(pterm.FgRed)).WithTitleTopLeft().WithTitle(pterm.BgGreen.Sprintf("%s", pterm.FgWhite.Sprintf("TODO LIST"))).Println(text)
+	fmt.Println(utils.LLMInputStyle("hello"))
 }
 
 func TestStat(t *testing.T) {
