@@ -344,7 +344,7 @@ var atCmdRegex = regexp.MustCompile(`@\S+`)
 func (a *Agent) processAtCommand(userInput string) (string, bool) {
 	matches := atCmdRegex.FindAllString(userInput, -1)
 	// 将提取的@字符串转换为Attachment对象并存储
-	index := 0
+	index := 1
 	var attachments []*utils.Attachment
 	for _, match := range matches {
 		if strings.HasPrefix(match, "@file:") {
@@ -354,7 +354,7 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 				a.output.OnSystemMsg(locales.Sprintf("invalid file path: %v", path), berio.MsgTypeWarning)
 				return "", false
 			}
-			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("@attchment %d@", index))
+			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("[bergo-attch %d]", index))
 			if stat.IsDir() {
 				attachments = append(attachments, &utils.Attachment{
 					Index: index,

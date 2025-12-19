@@ -113,7 +113,7 @@ func (s *Shell) RunWithPty(command string) (string, error) {
 	width := pterm.GetTerminalWidth() * 7 / 10
 	ptmx.Resize(width, height)
 
-	c := ptmx.Command(`zsh`, "-c", "ls -al")
+	c := ptmx.Command(`zsh`, "-c", command)
 	if er := c.Start(); er != nil {
 		return "", er
 	}

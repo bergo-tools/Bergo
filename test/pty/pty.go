@@ -50,5 +50,21 @@ func test() (string, error) {
 }
 
 func main() {
-	fmt.Println(utils.LLMInputStyle("hello"))
+	s := utils.Shell{
+		IsTask: false,
+	}
+	output, err := s.Run("ls -l")
+	if err != nil {
+		fmt.Println("Run command failed:", err)
+	}
+	fmt.Println(output)
+
+	s2 := utils.Shell{
+		IsTask: false,
+	}
+	output2, err := s2.Run("grep main main.go")
+	if err != nil {
+		fmt.Println("Run command failed:", err)
+	}
+	fmt.Println(output2)
 }
