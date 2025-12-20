@@ -197,7 +197,7 @@ var EditDiffToolDesc = &ToolDesc{
 
 var EditWholeToolDesc = &ToolDesc{
 	Name:   TOOL_EDIT_WHOLE,
-	Intent: locales.Sprintf("Bergo want to edit file"),
+	Intent: locales.Sprintf("Bergo is editing file"),
 	Schema: EditWholeSchema(),
 	OutputFunc: func(call *llm.ToolCall, content string) string {
 		stub := EditWholeToolResult{}

@@ -3,8 +3,11 @@ package prompt
 import (
 	"bergo/config"
 	"bytes"
+	"io/ioutil"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
 	"text/template"
 	"time"
 )
@@ -17,6 +20,12 @@ type ToolInfo struct {
 }
 
 func GetSystemPrompt() string {
+	// 加载agents.md文件内容（不区分大小写）
+	OnceLoad.Do(func() {
+		AgentMd = loadAgentSuggestion()
+	})
+	agentSuggestion := AgentMd
+
 	t := template.New("systemPrompt")
 	t, err := t.Parse(bergoSystemPrompt)
 	if err != nil {
@@ -24,17 +33,59 @@ func GetSystemPrompt() string {
 	}
 	workspace, _ := filepath.Abs(".")
 	var buf *bytes.Buffer = bytes.NewBuffer(nil)
+
+	language := config.GlobalConfig.Language
+
 	err = t.Execute(buf, map[string]interface{}{
-		"Os":        runtime.GOOS,
-		"Arch":      runtime.GOARCH,
-		"Date":      time.Now().Format("2006-01-02"),
-		"Language":  config.GlobalConfig.Language,
-		"Workspace": workspace,
+		"Os":              runtime.GOOS,
+		"Arch":            runtime.GOARCH,
+		"Date":            time.Now().Format("2006-01-02"),
+		"Language":        language,
+		"Workspace":       workspace,
+		"AgentSuggestion": agentSuggestion,
 	})
 	if err != nil {
 		panic(err)
 	}
 	return buf.String()
+}
+
+var AgentMd string
+var OnceLoad sync.Once
+
+// loadAgentSuggestion 加载agents.md文件内容，文件名不区分大小写
+func loadAgentSuggestion() string {
+	workspace, _ := filepath.Abs(".")
+
+	// 尝试查找agents.md文件（不区分大小写）
+	files, err := ioutil.ReadDir(workspace)
+	if err != nil {
+		return ""
+	}
+
+	var agentFilePath string
+	for _, file := range files {
+		if !file.IsDir() {
+			filename := file.Name()
+			// 不区分大小写比较
+			if strings.EqualFold(filename, "agents.md") {
+				agentFilePath = filepath.Join(workspace, filename)
+				break
+			}
+		}
+	}
+
+	if agentFilePath == "" {
+		return ""
+	}
+
+	// 读取文件内容
+	content, err := ioutil.ReadFile(agentFilePath)
+	if err != nil {
+		return ""
+	}
+
+	return string(content)
 }
 
 var bergoSystemPrompt = `
@@ -79,7 +130,6 @@ var bergoSystemPrompt = `
 2. 如果你认为你完成了任务，你可以使用stop_loop工具来结束agentic循环
 3. 调用工具前简要描述你的意图
 
-
 ## 工作目录:
 {{.Workspace}}
 *不要编辑改动目录外的文件*
@@ -88,4 +138,11 @@ var bergoSystemPrompt = `
 - Bergo支持多语言， 用户希望你用 {{.Language}}回复
 - 今天是{{.Date}}
 - 运行在 {{.Os}} {{.Arch}}
+
+## Agents.md
+用户可能写一些关于项目的注意事项和提示，包裹在下面的<suggestion></suggestion>标签中。
+但是你也不需要特别死板地遵守它，作为一个参考就行。因为用户写的东西不一定合理。
+<suggestion>
+{{.AgentSuggestion}}
+</suggestion>
 `
