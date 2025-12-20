@@ -75,7 +75,7 @@ identifier = "mimo-v2-flash"
 provider = "xiaomi"
 model_name = "mimo-v2-flash"
 temperature = 0.8
-max_tokens = 262144
+max_tokens = 131072
 context_window = 262144
 
 [[models]]
@@ -83,6 +83,6 @@ identifier = "mimo-v2-flash-thinking"
 provider = "xiaomi"
 model_name = "mimo-v2-flash"
 temperature = 0.8
-max_tokens = 262144
+max_tokens = 131072
 context_window = 262144
 think = true

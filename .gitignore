@@ -3,7 +3,7 @@ bergo.toml
 .vscode
 cmd/bergo/bergo
 .bergo
-
+bergo
 venv
 GPATH
 GRTAGS

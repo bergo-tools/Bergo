@@ -122,6 +122,15 @@ func StopGap() {
 	var input string
 	fmt.Scanf("%s", &input)
 }
+
+func isChanClose(signalChan chan os.Signal) bool {
+	select {
+	case _, ok := <-signalChan:
+		return !ok
+	default:
+		return false
+	}
+}
 func (a *Agent) doTask(ctx context.Context) {
 	defer utils.HideMementoFile(a.sessionId)
 	//clean tail tool calls
@@ -131,7 +140,18 @@ func (a *Agent) doTask(ctx context.Context) {
 	output := a.output
 	toolCallAnswers := []*tools.AgentOutput{}
 	keepGoing := true
+	signalChan := make(chan os.Signal, 1)
+	defer func() {
+		if !isChanClose(signalChan) {
+			close(signalChan)
+		}
+		signal.Reset(os.Interrupt)
+	}()
 	for {
+		if !isChanClose(signalChan) {
+			close(signalChan)
+		}
+		signal.Reset(os.Interrupt)
 		output.Stop() //just in case
 		if a.stop {
 			break
@@ -153,7 +173,13 @@ func (a *Agent) doTask(ctx context.Context) {
 		chatItems = llm.InjectSystemPrompt(chatItems, prompt.GetSystemPrompt())
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		cli.SetCancelFunc(cancel)
-		a.captureSignal(cancel)
+
+		signalChan = make(chan os.Signal, 1)
+		signal.Notify(signalChan, os.Interrupt)
+		go func() {
+			<-signalChan
+			cancel()
+		}()
 		content := bytes.NewBuffer(nil)
 		reasoningContent := bytes.NewBuffer(nil)
 

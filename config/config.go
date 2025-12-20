@@ -43,6 +43,7 @@ type ModelConfig struct {
 	ReasoningTag     string  `toml:"reasoning_tag,omitempty"`
 	Prefill          bool    `toml:"prefill,omitempty"`
 	Think            bool    `toml:"think,omitempty"`
+	RateLimitInterval float64 `toml:"rate_limit_interval,omitempty"` // 限流间隔（秒）
 }
 
 func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {
@@ -84,6 +85,9 @@ func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {
 	}
 	if Think := userDefine.Think; Think {
 		c.Think = Think
+	}
+	if RateLimitInterval := userDefine.RateLimitInterval; RateLimitInterval != 0 {
+		c.RateLimitInterval = RateLimitInterval
 	}
 
 }

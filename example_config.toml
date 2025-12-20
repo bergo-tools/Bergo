@@ -26,3 +26,12 @@ deepseek_api_key = "sk-your-deepseek-api-key-here"
 
 # 要使用更多模型，可以参考 config/default.toml 中的模型定义
 # 并在此文件中添加 [[models]] 部分
+
+# 限流配置示例
+# 如果需要对特定模型设置请求间隔限制，可以在模型配置中添加 rate_limit_interval
+# 例如：
+# [[models]]
+# identifier = "deepseek-chat"
+# provider = "deepseek"
+# model_name = "deepseek-chat"
+# rate_limit_interval = 1.0  # 每次请求间隔1秒，防止API限流
