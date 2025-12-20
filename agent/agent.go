@@ -204,11 +204,19 @@ func (a *Agent) doTask(ctx context.Context) {
 
 		//Tool use if any
 		hasStopLoop := false
+		if config.GlobalConfig.Debug {
+			var tools []string
+			for _, call := range toolCallRequests {
+				tools = append(tools, call.Function.Name)
+			}
+			cli.PrintDebugText("tool calls: %v", tools)
+		}
 		if len(toolCallRequests) > 0 {
 			for _, call := range toolCallRequests {
 				if call.Function.Name == tools.TOOL_STOP_LOOP {
 					hasStopLoop = true
 				}
+				cli.PrintDebugText("calling tool: %v", call.Function.Name)
 				answer, err := a.doToolUse(ctxWithCancel, call)
 				if err != nil {
 					a.output.OnSystemMsg(locales.Sprintf("error when tool call: %v", err), berio.MsgTypeWarning)
