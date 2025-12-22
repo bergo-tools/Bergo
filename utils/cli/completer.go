@@ -19,7 +19,7 @@ var cmdsuggestions = []CompletionItem{
 	{Text: "/agent", Description: locales.Sprintf("switch to agent mode")},
 	{Text: "/multiline", Description: locales.Sprintf("switch to multiline input mode, ctrl+C to exit")},
 	{Text: "/revert", Description: locales.Sprintf("revert to last checkpoint")},
-	{Text: "/timeline", Description: locales.Sprintf("show timeline viewer")},
+	{Text: "/history", Description: locales.Sprintf("show timeline viewer")},
 	{Text: "/sessions", Description: locales.Sprintf("show sessions viewer")},
 	{Text: "/clear", Description: locales.Sprintf("clear everthing. start a new session")},
 	{Text: "/model", Description: locales.Sprintf("switch model")},

@@ -20,7 +20,7 @@ func (a *Agent) initCmdHandler() {
 		"/planner":   a.plannerCmd,
 		"/agent":     a.agentCmd,
 		"/multiline": a.multilineCmd,
-		"/timeline":  a.timelineCmd,
+		"/history":   a.timelineCmd,
 		"/revert":    a.revertCmd,
 		"/sessions":  a.loadSessionCmd,
 		"/clear":     a.newSessionCmd,

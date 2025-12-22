@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+// 不需要更改lang目录下的文件，这个是生成出来的。
+//
 //go:embed lang/zh.json
 var simChinese string
 

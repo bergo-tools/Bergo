@@ -40,6 +40,13 @@ type deleteConfirmMsg struct{ confirmed bool }
 type enterConfirmMsg struct{ confirmed bool }
 
 func newSessionListModel(items []SessionItem) sessionListModel {
+	// 倒序处理 items，方便查看最新的 session
+	reversedItems := make([]SessionItem, len(items))
+	for i, item := range items {
+		reversedItems[len(items)-1-i] = item
+	}
+	items = reversedItems
+
 	var listItems []list.Item
 	for _, item := range items {
 		listItems = append(listItems, sessionItem{
@@ -51,7 +58,7 @@ func newSessionListModel(items []SessionItem) sessionListModel {
 	delegate := list.NewDefaultDelegate()
 
 	l := list.New(listItems, delegate, 0, 0)
-	l.Title = "Session List"
+	l.Title = locales.Sprintf("Session List")
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)

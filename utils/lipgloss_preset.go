@@ -42,7 +42,7 @@ func SearchReplaceStyle(file string, search string, replace string) string {
 	replaceCont := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width).Render(replace)
 	if search == "" {
 		replaceCont = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width * 2).Render(replace)
-		replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf(" Write to file: %s", file), replaceCont)
+		replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf("Write to file: %s", file), replaceCont)
 		return replaceCont
 	}
 	replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf("Replace: "), replaceCont)
