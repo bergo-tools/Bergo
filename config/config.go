@@ -18,6 +18,7 @@ type Config struct {
 	Language          string         `toml:"language,omitempty"`
 	HttpProxy         string         `toml:"http_proxy,omitempty"`
 	CompactThreshold  float64        `toml:"compact_threshold,omitempty"`
+	MaxSessionCount   int            `toml:"max_session_count,omitempty"`
 
 	DeepseekApiKey   string `toml:"deepseek_api_key,omitempty"`
 	OpenaiApiKey     string `toml:"openai_api_key,omitempty"`
@@ -117,6 +118,7 @@ func setDefault() {
 	if GlobalConfig.CompactThreshold == 0 {
 		GlobalConfig.CompactThreshold = 0.8 //默认0.8
 	}
+	// MaxSessionCount 默认为0，表示不限制session数量
 
 	if GlobalConfig.DeepseekApiKey != "" {
 		for _, model := range GlobalConfig.Models {

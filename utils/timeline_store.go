@@ -282,3 +282,12 @@ func StoreSessionList() {
 		return
 	}
 }
+
+// ClearAllSessions 清空所有session
+func ClearAllSessions() {
+	for _, item := range SessionList {
+		removeSession(item.SessionId)
+	}
+	SessionList = []*SessionListItem{}
+	StoreSessionList()
+}

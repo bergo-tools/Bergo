@@ -284,6 +284,31 @@ func readConfig() {
 	}
 }
 
+// checkAndCleanSessions 检查session数量，如果超过配置的最大值则提示是否清空
+func checkAndCleanSessions() {
+	maxCount := config.GlobalConfig.MaxSessionCount
+	// 如果配置值小于等于0，不进行检查
+	if maxCount <= 0 {
+		return
+	}
+
+	sessionList := utils.GetSessionList()
+	if len(sessionList) > maxCount {
+		pterm.Warning.Println(locales.Sprintf("Session count (%d) exceeds the limit (%d)", len(sessionList), maxCount))
+
+		clearAll, err := pterm.DefaultInteractiveConfirm.Show(locales.Sprintf("Clear all sessions?"))
+		if err != nil {
+			pterm.Error.Println(locales.Sprintf("Confirmation failed:"), err)
+			return
+		}
+
+		if clearAll {
+			utils.ClearAllSessions()
+			pterm.Success.Println(locales.Sprintf("All sessions cleared"))
+		}
+	}
+}
+
 func main() {
 	utils.EnvInit()
 	// 检查是否有init命令
@@ -301,6 +326,9 @@ func main() {
 	version.CheckAndHandleUpdates()
 
 	readConfig()
+
+	// 检查session数量，如果超过配置的最大值则提示是否清空
+	checkAndCleanSessions()
 
 	cli.Debug = config.GlobalConfig.Debug
 	mp := agent.NewMainAgent()
