@@ -26,12 +26,13 @@ func (i sessionItem) Description() string { return i.description }
 func (i sessionItem) FilterValue() string { return i.title }
 
 type sessionListModel struct {
-	list              list.Model
-	items             []SessionItem
-	selectedItem      SessionItem
-	showDeleteConfirm bool
-	showEnterConfirm  bool
-	originalItems     []SessionItem
+	list                 list.Model
+	items                []SessionItem
+	selectedItem         SessionItem
+	showDeleteConfirm    bool
+	showEnterConfirm     bool
+	showDeleteAllConfirm bool
+	originalItems        []SessionItem
 }
 
 type sessionListMsg struct{ item SessionItem }
@@ -99,9 +100,25 @@ func (m sessionListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		if m.showDeleteAllConfirm {
+			switch msg.String() {
+			case "y", "Y":
+				return m.deleteAllItems(), tea.Quit
+			case "n", "N", "esc":
+				m.showDeleteAllConfirm = false
+				return m, nil
+			}
+			return m, nil
+		}
+
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
+		case tea.KeyCtrlD:
+			if len(m.items) > 0 {
+				m.showDeleteAllConfirm = true
+			}
+			return m, nil
 		case tea.KeyEnter:
 			if m.list.FilterState() == list.Filtering {
 				break
@@ -146,8 +163,18 @@ func (m sessionListModel) View() string {
 				"Select '%s'? Press 'y' to confirm, 'n' to cancel",
 				m.list.SelectedItem().(sessionItem).Title(),
 			))
+	} else if m.showDeleteAllConfirm {
+		confirmationView = lipgloss.NewStyle().
+			Width(m.list.Width()).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("196")).
+			Align(lipgloss.Center).
+			Render(locales.Sprintf(
+				"Delete all %d sessions? Press 'y' to confirm, 'n' to cancel",
+				len(m.items),
+			))
 	}
-	helpFooter := locales.Sprintf("Press 'esc' to exit, 'enter' to confirm, 'delete' to delete")
+	helpFooter := locales.Sprintf("Press 'esc' to exit, 'enter' to confirm, 'delete' to delete, 'ctrl+d' to delete all")
 	if confirmationView != "" {
 		return lipgloss.JoinVertical(lipgloss.Left, listView, helpFooter, confirmationView)
 	}
@@ -185,6 +212,13 @@ func (m *sessionListModel) deleteCurrentItem() sessionListModel {
 		m.list.Select(len(m.items) - 1)
 	}
 
+	return *m
+}
+
+func (m *sessionListModel) deleteAllItems() sessionListModel {
+	m.items = []SessionItem{}
+	m.list.SetItems([]list.Item{})
+	m.showDeleteAllConfirm = false
 	return *m
 }
 

@@ -228,6 +228,7 @@ func AddSessionItem(sessionId, query string) {
 
 func removeSession(sessionId string) {
 	os.RemoveAll(filepath.Join(GetWorkspaceStorePath(), fmt.Sprintf("%v.timeline.json", sessionId)))
+	os.RemoveAll(filepath.Join(GetWorkspaceStorePath(), fmt.Sprintf("%v.bergo.memento", sessionId)))
 	userPath, err := os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -236,10 +237,8 @@ func removeSession(sessionId string) {
 }
 
 func SetSessionList(items []*SessionListItem) {
-	SessionList = items
-
 	mapSessionId := map[string]bool{}
-	for _, item := range SessionList {
+	for _, item := range items {
 		mapSessionId[item.SessionId] = true
 	}
 	var newSessionList []*SessionListItem
