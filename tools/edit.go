@@ -112,11 +112,6 @@ func EditDiff(ctx context.Context, input *AgentInput) *AgentOutput {
 	}
 	search := stub.Search
 	replace := stub.Replace
-	if err != nil {
-		return &AgentOutput{
-			Error: fmt.Errorf("failed to parse start_line because: %s", err.Error()),
-		}
-	}
 	err = edit.EditByDiff(search, replace)
 	if err != nil {
 		return &AgentOutput{

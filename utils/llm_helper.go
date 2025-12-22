@@ -58,7 +58,6 @@ func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval float
 			time.Sleep(waitTime)
 		}
 	}
-	
 	// 更新最后请求时间
 	m.lastRequestAt[modelIdentifier] = time.Now()
 }
@@ -66,7 +65,6 @@ func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval float
 func NewLlmStreamer(userContext context.Context, model *config.ModelConfig, chats []*llm.ChatItem, tools []*llm.ToolSchema) (*LlmStreamer, error) {
 	// 应用限流
 	globalRateLimitManager.applyRateLimit(model.Identifier, model.RateLimitInterval)
-	
 	provider := llm.ProviderFactory(model.Provider)
 	err := provider.Init(model)
 	if err != nil {

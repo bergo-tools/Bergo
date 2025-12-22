@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -47,6 +48,9 @@ func (r *ReadFile) ReadFileTruncated(start int, end int) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	var result []string
 	lineNum := 1
+	if end == 0 {
+		end = math.MaxInt
+	}
 	for scanner.Scan() {
 		if lineNum >= start && lineNum <= end {
 			line := scanner.Text()

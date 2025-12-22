@@ -576,3 +576,77 @@ func (p *AnthropicProvider) ListModels() ([]string, error) {
 	}
 	return models, nil
 }
+
+// AnthropicCountTokensRequest is the request body for the count tokens API
+type AnthropicCountTokensRequest struct {
+	Model    string             `json:"model"`
+	Messages []AnthropicMessage `json:"messages"`
+	System   any                `json:"system,omitempty"`
+	Tools    []AnthropicTool    `json:"tools,omitempty"`
+	Thinking *AnthropicThinking `json:"thinking,omitempty"`
+}
+
+// AnthropicCountTokensResponse is the response from the count tokens API
+type AnthropicCountTokensResponse struct {
+	InputTokens int `json:"input_tokens"`
+}
+
+// CountTokens counts the number of tokens in the given request
+func (p *AnthropicProvider) CountTokens(ctx context.Context, req *Request) (int, error) {
+	system, messages := p.convertMessages(req.ChatItems)
+
+	countReq := &AnthropicCountTokensRequest{
+		Model:    p.modelName,
+		Messages: messages,
+		Tools:    p.convertTools(req.Tools),
+	}
+
+	if system != "" {
+		countReq.System = []AnthropicContentBlock{{
+			Type:         "text",
+			Text:         system,
+			CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
+		}}
+	}
+
+	if p.think {
+		countReq.Thinking = &AnthropicThinking{Type: "enabled", BudgetTokens: p.thinkingBudget}
+	}
+
+	requestBody, err := json.Marshal(countReq)
+	if err != nil {
+		return 0, locales.Errorf("failed to marshal count tokens request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/v1/messages/count_tokens", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return 0, locales.Errorf("failed to create count tokens request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-api-key", p.apiKey)
+	httpReq.Header.Set("anthropic-version", p.anthropicVersion)
+
+	resp, err := p.httpClient.Do(httpReq)
+	if err != nil {
+		return 0, locales.Errorf("failed to send count tokens request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return 0, locales.Errorf("count tokens API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, locales.Errorf("failed to read count tokens response: %w", err)
+	}
+
+	var countResp AnthropicCountTokensResponse
+	if err := json.Unmarshal(body, &countResp); err != nil {
+		return 0, locales.Errorf("failed to unmarshal count tokens response: %w", err)
+	}
+
+	return countResp.InputTokens, nil
+}

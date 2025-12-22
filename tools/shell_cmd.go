@@ -43,6 +43,7 @@ func ShellCommand(ctx context.Context, input *AgentInput) *AgentOutput {
 			Error: fmt.Errorf("the output is too long, try some commands to filter the output or save output as a file and read it later"),
 		}
 	}
+	result = fmt.Sprintf("result:\n%s", result)
 	return &AgentOutput{
 		Content:  result,
 		ToolCall: input.ToolCall,
