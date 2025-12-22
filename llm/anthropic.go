@@ -129,7 +129,7 @@ func (p *AnthropicProvider) Init(conf *config.ModelConfig) error {
 	p.modelName = conf.ModelName
 
 	if conf.BaseUrl == "" {
-		p.baseURL = "https://api.anthropic.com/v1"
+		p.baseURL = "https://api.anthropic.com"
 	} else {
 		p.baseURL = conf.BaseUrl
 	}
@@ -306,7 +306,7 @@ func (p *AnthropicProvider) createRequest(chatItems []*ChatItem, tools []*ToolSc
 }
 
 func (p *AnthropicProvider) sendHTTPRequest(ctx context.Context, requestBody []byte) (*http.Response, error) {
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/messages", bytes.NewBuffer(requestBody))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/v1/messages", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, locales.Errorf("failed to create request: %w", err)
 	}
