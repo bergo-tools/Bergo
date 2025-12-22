@@ -177,8 +177,10 @@ func (s *LlmStreamer) Next() bool {
 			return true
 		}
 		if resp.FinishReason != "" {
+			if resp.FinishReason == llm.FinishReasonLength || resp.FinishReason == llm.FinishReasonToolCalls || resp.FinishReason == llm.FinishReasonNull {
+				return true
+			}
 			s.err = locales.Errorf("finish reason: %s", resp.FinishReason)
-			return true
 		}
 		return true
 	}

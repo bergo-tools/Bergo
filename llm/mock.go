@@ -138,6 +138,7 @@ func (p *MockProvider) StreamResponse(ctx context.Context, req *Request) <-chan 
 
 	ch := make(chan *Response)
 	go func() {
+		time.Sleep(5 * time.Second)
 		defer close(ch)
 		for _, resp := range responses[*idx] {
 			ch <- resp
