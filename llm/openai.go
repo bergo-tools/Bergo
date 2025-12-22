@@ -364,7 +364,7 @@ func (p *OpenAIProvider) processStreamResponse(ctx context.Context, resp *http.R
 }
 
 func (p *OpenAIProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
-	responseChan := make(chan *Response)
+	responseChan := make(chan *Response, 8)
 
 	go func() {
 		defer close(responseChan)

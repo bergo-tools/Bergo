@@ -32,6 +32,19 @@ func init() {
 			},
 			{
 				Content: "item 2\n</create></todo_list>",
+				ToolCalls: []*ToolCall{
+					{
+						ID:   "xxx1",
+						Type: "function",
+						Function: struct {
+							Name      string `json:"name"`
+							Arguments string `json:"arguments"`
+						}{
+							Name:      "shell_cmd",
+							Arguments: "{\"command\":\"ls -l\"}",
+						},
+					},
+				},
 			},
 			{
 				TokenStatics: &TokenUsage{
@@ -44,39 +57,7 @@ func init() {
 			},
 		},
 	}
-	NormalMockResponses = append(NormalMockResponses, []*Response{
-		{
-			Content: "<todo_list><update>1 completed\n2 ongoing\n</update></todo_list>",
-		},
-		{
-			TokenStatics: &TokenUsage{
-				TotalTokens:      100,
-				PromptTokens:     50,
-				CompletionTokens: 50,
-				CachedTokens:     25,
-			},
-			FinishReason: FinishReasonStop,
-		},
-	})
-	NormalMockResponses = append(NormalMockResponses, []*Response{
-		{
-			Content: "<todo_list><update>1 completed\n2 completed\n</update></todo_list>",
-		},
-	})
-	NormalMockResponses = append(NormalMockResponses, []*Response{
-		{
-			Content: "<stop_loop>end</stop_loop>",
-		},
-		{
-			TokenStatics: &TokenUsage{
-				TotalTokens:      15000,
-				PromptTokens:     14000,
-				CompletionTokens: 1000,
-				CachedTokens:     280,
-			},
-			FinishReason: FinishReasonStop,
-		},
-	})
+
 	BeragExtractResponses = append(BeragExtractResponses, []*Response{
 		{
 			Content: "try to extract",
@@ -138,7 +119,7 @@ func (p *MockProvider) StreamResponse(ctx context.Context, req *Request) <-chan 
 
 	ch := make(chan *Response)
 	go func() {
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 		defer close(ch)
 		for _, resp := range responses[*idx] {
 			ch <- resp
