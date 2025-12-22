@@ -304,7 +304,7 @@ func (a *Agent) readFromUser() string {
 
 func (a *Agent) saveCheckPoint() {
 	commit := "auto save"
-	hash := a.timeline.CheckpointSave(commit)
+	hash := a.timeline.CheckpointSave(commit, a.stats.TokenUsageSession)
 	if hash != "" {
 		a.output.OnSystemMsg(locales.Sprintf("checkpoint saved, hash: %v", hash), berio.MsgTypeText)
 	}

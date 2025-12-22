@@ -17,6 +17,90 @@ type SerializableTimelineItem struct {
 	GitHash string          `json:"git_hash"`
 }
 
+func (t *Timeline) Store() {
+	if t.SessionId == "" {
+		return // 没有会话ID，不存储
+	}
+
+	timelineFile := t.getTimelineFilePath()
+
+	// 确保目录存在
+	timelineDir := filepath.Dir(timelineFile)
+	if err := os.MkdirAll(timelineDir, 0755); err != nil {
+		fmt.Printf("Warning: Failed to create timeline directory: %v\n", err)
+		return
+	}
+
+	// 将时间线数据转换为可序列化的格式
+	serializableItems := make([]*SerializableTimelineItem, len(t.Items))
+	for i, item := range t.Items {
+		serializableItems[i] = item.ToSerializable()
+	}
+
+	dataToSave := struct {
+		MaxId            int64
+		SessionId        string
+		Items            []*SerializableTimelineItem
+		Branch           string
+		IsCheckPointInit bool
+	}{
+		MaxId:            t.MaxId,
+		SessionId:        t.SessionId,
+		Items:            serializableItems,
+		Branch:           t.Branch,
+		IsCheckPointInit: t.IsCheckPointInit,
+	}
+
+	data, err := json.MarshalIndent(dataToSave, "", "  ")
+	if err != nil {
+		fmt.Printf("Warning: Failed to marshal timeline data: %v\n", err)
+		return
+	}
+
+	if err := os.WriteFile(timelineFile, data, 0644); err != nil {
+		fmt.Printf("Warning: Failed to write timeline file: %v\n", err)
+		return
+	}
+}
+
+func (t *Timeline) Load() {
+	timelineFile := t.getTimelineFilePath()
+	if _, err := os.Stat(timelineFile); os.IsNotExist(err) {
+		return // 文件不存在，无需加载
+	}
+
+	data, err := os.ReadFile(timelineFile)
+	if err != nil {
+		fmt.Printf("Warning: Failed to read timeline file: %v\n", err)
+		return
+	}
+
+	var savedData struct {
+		MaxId            int64
+		SessionId        string
+		Items            []*SerializableTimelineItem
+		Branch           string
+		IsCheckPointInit bool
+	}
+
+	if err := json.Unmarshal(data, &savedData); err != nil {
+		fmt.Printf("Warning: Failed to unmarshal timeline data: %v\n", err)
+		return
+	}
+
+	t.MaxId = savedData.MaxId
+	t.SessionId = savedData.SessionId
+	t.Branch = savedData.Branch
+	t.IsCheckPointInit = savedData.IsCheckPointInit
+
+	// 将可序列化的项目转换回原始格式
+	t.Items = make([]*TimelineItem, len(savedData.Items))
+	for i, serializableItem := range savedData.Items {
+		t.Items[i] = serializableItem.ToTimelineItem()
+	}
+	t.InitCheckpoint()
+}
+
 // ToSerializable 将TimelineItem转换为可序列化的格式
 func (item *TimelineItem) ToSerializable() *SerializableTimelineItem {
 	serializable := &SerializableTimelineItem{
@@ -47,8 +131,8 @@ func (item *TimelineItem) ToSerializable() *SerializableTimelineItem {
 			}
 		}
 	case TL_CheckpointSave:
-		if commitMsg, ok := item.Data.(string); ok {
-			if data, err := json.Marshal(commitMsg); err == nil {
+		if cpData, ok := item.Data.(*CheckpointData); ok {
+			if data, err := json.Marshal(cpData); err == nil {
 				serializable.Data = data
 			}
 		}
@@ -90,9 +174,9 @@ func (serializable *SerializableTimelineItem) ToTimelineItem() *TimelineItem {
 			item.Data = &response
 		}
 	case TL_CheckpointSave:
-		var commitMsg string
-		if err := json.Unmarshal(serializable.Data, &commitMsg); err == nil {
-			item.Data = commitMsg
+		var cpData CheckpointData
+		if err := json.Unmarshal(serializable.Data, &cpData); err == nil {
+			item.Data = &cpData
 		}
 	case TL_Compact:
 		var compact Query

@@ -4,7 +4,6 @@ import (
 	"bergo/llm"
 	"bergo/locales"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -75,13 +74,13 @@ func (t *Timeline) InitCheckpoint() {
 	t.IsCheckPointInit = true
 }
 
-func (t *Timeline) CheckpointSave(commit string) string {
+func (t *Timeline) CheckpointSave(commit string, tokenUsage llm.TokenUsage) string {
 	hash, err := t.Checkpoint.Save(commit)
 	if err != nil {
 		panic(err)
 	}
 
-	t.checkpointSave(commit, hash)
+	t.checkpointSave(commit, hash, tokenUsage)
 	t.Store()
 	return hash
 }
@@ -98,90 +97,6 @@ func (t *Timeline) Revert(hash string) error {
 	t.Store()
 	HideMementoFile(t.SessionId)
 	return nil
-}
-
-func (t *Timeline) Store() {
-	if t.SessionId == "" {
-		return // 没有会话ID，不存储
-	}
-
-	timelineFile := t.getTimelineFilePath()
-
-	// 确保目录存在
-	timelineDir := filepath.Dir(timelineFile)
-	if err := os.MkdirAll(timelineDir, 0755); err != nil {
-		fmt.Printf("Warning: Failed to create timeline directory: %v\n", err)
-		return
-	}
-
-	// 将时间线数据转换为可序列化的格式
-	serializableItems := make([]*SerializableTimelineItem, len(t.Items))
-	for i, item := range t.Items {
-		serializableItems[i] = item.ToSerializable()
-	}
-
-	dataToSave := struct {
-		MaxId            int64
-		SessionId        string
-		Items            []*SerializableTimelineItem
-		Branch           string
-		IsCheckPointInit bool
-	}{
-		MaxId:            t.MaxId,
-		SessionId:        t.SessionId,
-		Items:            serializableItems,
-		Branch:           t.Branch,
-		IsCheckPointInit: t.IsCheckPointInit,
-	}
-
-	data, err := json.MarshalIndent(dataToSave, "", "  ")
-	if err != nil {
-		fmt.Printf("Warning: Failed to marshal timeline data: %v\n", err)
-		return
-	}
-
-	if err := os.WriteFile(timelineFile, data, 0644); err != nil {
-		fmt.Printf("Warning: Failed to write timeline file: %v\n", err)
-		return
-	}
-}
-
-func (t *Timeline) Load() {
-	timelineFile := t.getTimelineFilePath()
-	if _, err := os.Stat(timelineFile); os.IsNotExist(err) {
-		return // 文件不存在，无需加载
-	}
-
-	data, err := os.ReadFile(timelineFile)
-	if err != nil {
-		fmt.Printf("Warning: Failed to read timeline file: %v\n", err)
-		return
-	}
-
-	var savedData struct {
-		MaxId            int64
-		SessionId        string
-		Items            []*SerializableTimelineItem
-		Branch           string
-		IsCheckPointInit bool
-	}
-
-	if err := json.Unmarshal(data, &savedData); err != nil {
-		fmt.Printf("Warning: Failed to unmarshal timeline data: %v\n", err)
-		return
-	}
-
-	t.MaxId = savedData.MaxId
-	t.SessionId = savedData.SessionId
-	t.Branch = savedData.Branch
-	t.IsCheckPointInit = savedData.IsCheckPointInit
-
-	// 将可序列化的项目转换回原始格式
-	t.Items = make([]*TimelineItem, len(savedData.Items))
-	for i, serializableItem := range savedData.Items {
-		t.Items[i] = serializableItem.ToTimelineItem()
-	}
-	t.InitCheckpoint()
 }
 
 // getTimelineFilePath 返回时间线文件的存储路径
@@ -245,13 +160,22 @@ func (t *Timeline) AddToolCallResult(toolId string, toolName string, content str
 	t.Store()
 }
 
-func (t *Timeline) checkpointSave(commit string, hash string) string {
+// CheckpointData 用于存储checkpoint的数据
+type CheckpointData struct {
+	Commit     string         `json:"commit"`
+	TokenUsage llm.TokenUsage `json:"token_usage"`
+}
+
+func (t *Timeline) checkpointSave(commit string, hash string, tokenUsage llm.TokenUsage) string {
 	t.Items = append(t.Items, &TimelineItem{
 		Type:    TL_CheckpointSave,
 		Ts:      time.Now().Unix(),
 		Id:      t.MaxId + 1,
 		GitHash: hash,
-		Data:    commit,
+		Data: &CheckpointData{
+			Commit:     commit,
+			TokenUsage: tokenUsage,
+		},
 	})
 	t.MaxId = t.MaxId + 1
 	return hash
@@ -278,32 +202,18 @@ func (t *Timeline) RevertToLastCheckpoint() {
 	}
 	t.Store()
 }
-func (t *Timeline) PrintHistory() string {
-	buff := bytes.NewBufferString("")
-	for _, item := range t.Items {
-		switch item.Type {
-		case TL_LLMResponse:
-			buff.WriteString(LLMInputStyle("🤖|Bergo: "))
-			buff.WriteString(item.Data.(*LLMResponseItem).RenderedContent)
-			buff.WriteString("\n\n")
-		case TL_UserInput:
-			q := item.Data.(*Query)
-			buff.WriteString(UserQueryStyle(q.GetUserInput()))
-			buff.WriteString("\n\n")
-		case TL_ToolUse:
-			q := item.Data.(*ToolCallResult)
-			buff.WriteString(q.Rendered)
-			buff.WriteString("\n\n")
-		case TL_CheckpointSave:
-			buff.WriteString(InfoMessageStyle(locales.Sprintf("checkpoint saved, hash: %s", item.GitHash)))
-			buff.WriteString("\n\n")
-		case TL_Compact:
-			buff.WriteString(InfoMessageStyle(locales.Sprintf("Compacting...")))
-			buff.WriteString("\n\n")
-		}
 
+// GetLastCheckpointTokenUsage 获取最后一个checkpoint的TokenUsage
+func (t *Timeline) GetLastCheckpointTokenUsage() llm.TokenUsage {
+	for i := len(t.Items) - 1; i >= 0; i-- {
+		if t.Items[i].Type == TL_CheckpointSave {
+			if cpData, ok := t.Items[i].Data.(*CheckpointData); ok {
+				return cpData.TokenUsage
+			}
+			break
+		}
 	}
-	return buff.String()
+	return llm.TokenUsage{}
 }
 
 type LLMResponseItem struct {
@@ -352,6 +262,7 @@ func (t *Timeline) CleanTailToolCalls() {
 	}
 	t.Store()
 }
+
 func (t *Timeline) GetChatContext(addCoT bool) []*llm.ChatItem {
 	chats := make([]*llm.ChatItem, 0, len(t.Items))
 	for _, item := range t.Items {
@@ -461,10 +372,11 @@ func (t *Timeline) ToBriefHistory() []*HistoryItem {
 				history = append(history, composeTask(tmp))
 				tmp = make([]*TimelineItem, 0)
 			}
+			cpData := item.Data.(*CheckpointData)
 			history = append(history, &HistoryItem{
 				title:      fmt.Sprintf("%s 💾 CheckPoint", time.Unix(item.Ts, 0).Format("2006-01-02 15:04:05")),
 				simple:     "Hash: " + item.GitHash,
-				detail:     "Hash: " + item.GitHash + "\nCommit: " + item.Data.(string),
+				detail:     "Hash: " + item.GitHash + "\nCommit: " + cpData.Commit,
 				actionList: []string{locales.Sprintf("Revert")},
 				GitHash:    item.GitHash,
 			})
@@ -489,6 +401,35 @@ func (t *Timeline) ToBriefHistory() []*HistoryItem {
 	}
 	return history
 }
+
+func (t *Timeline) PrintHistory() string {
+	buff := bytes.NewBufferString("")
+	for _, item := range t.Items {
+		switch item.Type {
+		case TL_LLMResponse:
+			buff.WriteString(LLMInputStyle("🤖|Bergo: "))
+			buff.WriteString(item.Data.(*LLMResponseItem).RenderedContent)
+			buff.WriteString("\n\n")
+		case TL_UserInput:
+			q := item.Data.(*Query)
+			buff.WriteString(UserQueryStyle(q.GetUserInput()))
+			buff.WriteString("\n\n")
+		case TL_ToolUse:
+			q := item.Data.(*ToolCallResult)
+			buff.WriteString(q.Rendered)
+			buff.WriteString("\n\n")
+		case TL_CheckpointSave:
+			buff.WriteString(InfoMessageStyle(locales.Sprintf("checkpoint saved, hash: %s", item.GitHash)))
+			buff.WriteString("\n\n")
+		case TL_Compact:
+			buff.WriteString(InfoMessageStyle(locales.Sprintf("Compacting...")))
+			buff.WriteString("\n\n")
+		}
+
+	}
+	return buff.String()
+}
+
 func (i *TimelineItem) Simple() string {
 	switch i.Type {
 	case TL_UserInput:
@@ -496,7 +437,8 @@ func (i *TimelineItem) Simple() string {
 	case TL_LLMResponse:
 		return i.Data.(*LLMResponseItem).Content
 	case TL_CheckpointSave:
-		return i.Data.(string)
+		cpData := i.Data.(*CheckpointData)
+		return cpData.Commit
 	case TL_ToolUse:
 		return ""
 	default:
@@ -526,11 +468,15 @@ func (i *TimelineItem) Detail() string {
 	case TL_LLMResponse:
 		return i.Data.(*LLMResponseItem).ReasoningContent + "\n" + i.Data.(*LLMResponseItem).Content
 	case TL_CheckpointSave:
-		return "Hash: " + i.GitHash + "\nCommit: " + i.Data.(string)
+		cpData := i.Data.(*CheckpointData)
+		return "Hash: " + i.GitHash + "\nCommit: " + cpData.Commit
 	case TL_ToolUse:
 		return fmt.Sprintf("%s\n%s", i.Data.(*ToolCallResult).ToolId, i.Data.(*ToolCallResult).Content)
 	case TL_Compact:
-		return i.Data.(string)
+		if i.Data != nil {
+			return i.Data.(*Query).Build()
+		}
+		return ""
 	default:
 		return ""
 	}
