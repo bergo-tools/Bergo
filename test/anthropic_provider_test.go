@@ -31,7 +31,7 @@ func TestAnthropicProviderStreamingText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read config: %v", err)
 	}
-	c := config.GlobalConfig.GetModelConfig("opus")
+	c := config.GlobalConfig.GetModelConfig("op-m2.1")
 	streamer, err := utils.NewLlmStreamer(context.Background(), c, []*llm.ChatItem{
 		{
 			Message: "You are a helpful assistant.",

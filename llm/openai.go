@@ -24,7 +24,7 @@ type OpenAIProvider struct {
 	presencePenalty  float64
 	maxTokens        int
 	httpClient       *http.Client
-	xiaomiThink      bool
+	thinking         bool
 }
 
 type OpenAIContentPart struct {
@@ -226,7 +226,7 @@ func (p *OpenAIProvider) createChatRequest(messages []OpenAIChatMessage, tools [
 		Tools:               tools,
 		StreamOptions:       &OpenAIStreamOptions{IncludeUsage: true},
 	}
-	if p.xiaomiThink {
+	if p.thinking {
 		thinkObj := &struct {
 			Type string `json:"type,omitempty"`
 		}{Type: "enabled"}

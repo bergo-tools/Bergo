@@ -58,7 +58,7 @@ func (p *XiaomiProvider) Init(conf *config.ModelConfig) error {
 	}
 
 	// 设置小米思考模式
-	p.xiaomiThink = conf.Think
+	p.thinking = conf.Think
 
 	// 创建 HTTP 客户端
 	p.httpClient = &http.Client{}
