@@ -93,7 +93,7 @@ func (a *Agent) timelineCmd(input string) (string, bool) {
 	reverted := false
 	defer func() {
 		if reverted {
-			a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------n", berio.MsgTypeDump)
+			a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------", berio.MsgTypeDump)
 			a.output.OnSystemMsg(a.timeline.PrintHistory(), berio.MsgTypeDump)
 		}
 	}()
@@ -134,7 +134,7 @@ func (a *Agent) revertCmd(input string) (string, bool) {
 	a.timeline.RevertToLastCheckpoint()
 	// 恢复token用量
 	a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
-	a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------n", berio.MsgTypeDump)
+	a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------", berio.MsgTypeDump)
 	a.output.OnSystemMsg(a.timeline.PrintHistory(), berio.MsgTypeDump)
 	return "", true
 }
