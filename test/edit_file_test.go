@@ -54,11 +54,29 @@ var afcont string = `		buf.WriteString(allLines[i])
 	\\test`
 
 func TestEditDiff(t *testing.T) {
-	tmpFile := filepath.Join("/Users/zp/Desktop/playground/github/bergo", "test_edit.go")
+	tmpFile := filepath.Join("/Users/zp/Desktop/playground/Bergo/utils/timeline.go")
 	edit := &utils.Edit{
 		Path: tmpFile,
 	}
-	err := edit.EditByDiff(cont, afcont)
+	replace :=
+		`		case TL_UserInput:
+			query := item.Data.(*Query)
+			img := ""
+			if len(query.Images) > 0 {
+				img = query.Images[0] // 目前只支持单张图片
+			}
+			chats = append(chats, &llm.ChatItem{
+				Role:    "user",
+				Message: query.Build(),
+				Img:     img,
+			})`
+
+	search := `		case TL_UserInput:
+			chats = append(chats, &llm.ChatItem{
+				Role:    "user",
+				Message: item.Data.(*Query).Build(),
+			})`
+	err := edit.EditByDiff(search, replace)
 	if err != nil {
 		t.Fatal(err)
 	}
