@@ -38,6 +38,9 @@ type Agent struct {
 	sessionId string
 
 	InteruptNum int
+
+	// 用于恢复异常退出的 session
+	recoverySessionId string
 }
 
 func NewMainAgent() *Agent {
@@ -47,10 +50,25 @@ func NewMainAgent() *Agent {
 	}
 }
 
+// SetRecoverySession 设置需要恢复的 session ID（用于异常退出后恢复）
+func (a *Agent) SetRecoverySession(sessionId string) {
+	a.recoverySessionId = sessionId
+}
+
 func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOutput {
-	a.sessionId = time.Now().Format("20060102150405")
-	a.timeline = &utils.Timeline{}
-	a.timeline.Init(a.sessionId)
+	// 检查是否有需要恢复的 session
+	if a.recoverySessionId != "" {
+		a.sessionId = a.recoverySessionId
+		a.timeline = &utils.Timeline{}
+		a.timeline.Init(a.sessionId)
+		a.timeline.Load()
+		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
+		a.recoverySessionId = "" // 清除恢复标记
+	} else {
+		a.sessionId = time.Now().Format("20060102150405")
+		a.timeline = &utils.Timeline{}
+		a.timeline.Init(a.sessionId)
+	}
 	a.allowMap = make(map[string]bool)
 	a.output = berio.NewCliOutput()
 	output := a.output
