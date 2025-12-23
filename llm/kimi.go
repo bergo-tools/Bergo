@@ -78,10 +78,6 @@ func (p *KimiProvider) Init(conf *config.ModelConfig) error {
 func (p *KimiProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.OpenAIProvider.StreamResponse(ctx, req)
 }
-func (p *KimiProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
-}
 
 func (p *KimiProvider) ListModels() ([]string, error) {
 	// 直接调用 OpenAI provider 的方法

@@ -77,10 +77,6 @@ func (p *OpenRouterProvider) Init(conf *config.ModelConfig) error {
 func (p *OpenRouterProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.AnthropicProvider.StreamResponse(ctx, req)
 }
-func (p *OpenRouterProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
-}
 
 func (p *OpenRouterProvider) ListModels() ([]string, error) {
 	// 直接调用 OpenAI provider 的方法

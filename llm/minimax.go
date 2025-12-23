@@ -69,10 +69,6 @@ func (p *MinimaxProvider) Init(conf *config.ModelConfig) error {
 func (p *MinimaxProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.AnthropicProvider.StreamResponse(ctx, req)
 }
-func (p *MinimaxProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
-}
 
 func (p *MinimaxProvider) ListModels() ([]string, error) {
 	// 直接调用 OpenAI provider 的方法

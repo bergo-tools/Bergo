@@ -400,44 +400,6 @@ func (p *OpenAIProvider) StreamResponse(ctx context.Context, req *Request) <-cha
 	return responseChan
 }
 
-// StreamResponseWithImgInput 处理包含图片输入的流式响应
-func (p *OpenAIProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	responseChan := make(chan *Response)
-
-	go func() {
-		defer close(responseChan)
-
-		// 转换消息格式（支持图片）
-		messages := p.convertMessages(req.ChatItems)
-
-		// 创建请求体
-		chatRequest, err := p.createChatRequest(messages, req.Tools)
-		if err != nil {
-			responseChan <- &Response{Error: locales.Errorf("failed to create chat request: %w", err)}
-			return
-		}
-
-		// 序列化请求体
-		requestBody, err := json.Marshal(chatRequest)
-		if err != nil {
-			responseChan <- &Response{Error: locales.Errorf("failed to marshal request: %w", err)}
-			return
-		}
-
-		// 发送HTTP请求
-		resp, err := p.sendHTTPRequest(ctx, requestBody)
-		if err != nil {
-			responseChan <- &Response{Error: err}
-			return
-		}
-
-		// 处理流式响应
-		p.processStreamResponse(ctx, resp, responseChan)
-	}()
-
-	return responseChan
-}
-
 func (p *OpenAIProvider) ListModels() ([]string, error) {
 	// 创建 HTTP 请求
 	httpReq, err := http.NewRequest("GET", p.baseURL+"/models", nil)

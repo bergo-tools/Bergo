@@ -535,10 +535,6 @@ func (p *AnthropicProvider) StreamResponse(ctx context.Context, req *Request) <-
 	return responseChan
 }
 
-func (p *AnthropicProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	return p.StreamResponse(ctx, req)
-}
-
 func (p *AnthropicProvider) ListModels() ([]string, error) {
 	httpReq, err := http.NewRequest("GET", p.baseURL+"/models", nil)
 	if err != nil {

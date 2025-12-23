@@ -96,7 +96,6 @@ func (t *TokenUsage) String() string {
 type Provider interface {
 	Init(conf *config.ModelConfig) error
 	StreamResponse(ctx context.Context, req *Request) <-chan *Response
-	StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response
 	ListModels() ([]string, error)
 }
 

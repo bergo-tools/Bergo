@@ -81,10 +81,6 @@ func (p *XiaomiProvider) Init(conf *config.ModelConfig) error {
 func (p *XiaomiProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.OpenAIProvider.StreamResponse(ctx, req)
 }
-func (p *XiaomiProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
-}
 
 func (p *XiaomiProvider) ListModels() ([]string, error) {
 	// 直接调用 OpenAI provider 的方法
