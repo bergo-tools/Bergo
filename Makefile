@@ -7,6 +7,7 @@ MAIN_PACKAGE := ./main.go
 VERSION ?= $(shell git describe --tags 2>/dev/null || echo "v0.0.0")
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 COMMIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+SDK_PATH = $(shell xcrun --show-sdk-path)
 
 # Go build flags
 LDFLAGS := -ldflags "-X bergo/version.Version=$(VERSION) -X bergo/version.BuildTime=$(BUILD_TIME) -X bergo/version.CommitHash=$(COMMIT_HASH)"
@@ -31,15 +32,15 @@ clean:
 
 # Cross-compile for all platforms
 .PHONY: cross
-cross: darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 windows-amd64 windows-arm64
+cross: linux-amd64 linux-arm64 windows-amd64 windows-arm64
+
 
 # macOS amd64
 .PHONY: darwin-amd64
 darwin-amd64:
 	@echo "Building for darwin/amd64..."
 	@mkdir -p dist
-	CC="zig cc -target x86_64-macos" \
-	CXX="zig c++ -target x86_64-macos" \
+	CC="clang -arch x86_64 -isysroot ${SDK_PATH}" CXX="clang++ -arch x86_64 -isysroot ${SDK_PATH}" \
 	CGO_ENABLED=1 \
 	GOOS=darwin \
 	GOARCH=amd64 \
@@ -50,8 +51,7 @@ darwin-amd64:
 darwin-arm64:
 	@echo "Building for darwin/arm64..."
 	@mkdir -p dist
-	CC="zig cc -target aarch64-macos" \
-	CXX="zig c++ -target aarch64-macos" \
+	CC="clang -arch arm64 -isysroot ${SDK_PATH}" CXX="clang++ -arch arm64 -isysroot ${SDK_PATH}" \
 	CGO_ENABLED=1 \
 	GOOS=darwin \
 	GOARCH=arm64 \
