@@ -421,6 +421,24 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 				})
 			}
 			index++
+		} else if strings.HasPrefix(match, "@img:") {
+			path := strings.TrimPrefix(match, "@img:")
+			_, err := os.Stat(path)
+			if err != nil {
+				a.output.OnSystemMsg(locales.Sprintf("invalid image path: %v", path), berio.MsgTypeWarning)
+				return "", false
+			}
+			if !utils.IsImageFile(path) {
+				a.output.OnSystemMsg(locales.Sprintf("unsupported image format: %v", path), berio.MsgTypeWarning)
+				return "", false
+			}
+			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("[bergo-attch %d]", index))
+			attachments = append(attachments, &utils.Attachment{
+				Index: index,
+				Path:  path,
+				Type:  utils.AttachmentTypeImage,
+			})
+			index++
 		}
 
 	}

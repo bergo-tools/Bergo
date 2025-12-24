@@ -35,10 +35,17 @@ type AnthropicContentBlock struct {
 	ToolUseID    string                 `json:"tool_use_id,omitempty"`
 	IsError      bool                   `json:"is_error,omitempty"`
 	CacheControl *AnthropicCacheControl `json:"cache_control,omitempty"`
+	Source       *AnthropicImageSource  `json:"source,omitempty"`
 
 	ID    string          `json:"id,omitempty"`
 	Name  string          `json:"name,omitempty"`
 	Input json.RawMessage `json:"input,omitempty"`
+}
+
+type AnthropicImageSource struct {
+	Type      string `json:"type"`
+	MediaType string `json:"media_type"`
+	Data      string `json:"data"`
 }
 
 type AnthropicCacheControl struct {
@@ -206,6 +213,20 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 				Text:         item.Message,
 				CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
 			}}
+			// 如果有图片，添加图片 block
+			if item.Img != "" {
+				mediaType, base64Data := parseDataURL(item.Img)
+				if base64Data != "" {
+					blocks = append(blocks, AnthropicContentBlock{
+						Type: "image",
+						Source: &AnthropicImageSource{
+							Type:      "base64",
+							MediaType: mediaType,
+							Data:      base64Data,
+						},
+					})
+				}
+			}
 			messages = append(messages, AnthropicMessage{Role: "user", Content: blocks})
 		case "assistant":
 			blocks := []AnthropicContentBlock{}
@@ -260,6 +281,22 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 
 	system = strings.Join(systemParts, "\n")
 	return system, messages
+}
+
+// parseDataURL 解析 data URL，返回 MIME 类型和 base64 数据
+// 格式: data:image/jpeg;base64,{base64_data}
+func parseDataURL(dataURL string) (mediaType string, base64Data string) {
+	if !strings.HasPrefix(dataURL, "data:") {
+		return "", ""
+	}
+	// 去掉 "data:" 前缀
+	rest := strings.TrimPrefix(dataURL, "data:")
+	// 找到 ";base64," 分隔符
+	parts := strings.SplitN(rest, ";base64,", 2)
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
 }
 
 func (p *AnthropicProvider) convertTools(tools []*ToolSchema) []AnthropicTool {

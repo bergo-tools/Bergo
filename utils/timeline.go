@@ -268,9 +268,11 @@ func (t *Timeline) GetChatContext(addCoT bool) []*llm.ChatItem {
 	for _, item := range t.Items {
 		switch item.Type {
 		case TL_UserInput:
+			query := item.Data.(*Query)
 			chats = append(chats, &llm.ChatItem{
 				Role:    "user",
-				Message: item.Data.(*Query).Build(),
+				Message: query.Build(),
+				Img:     query.GetImageDataURL(),
 			})
 		case TL_ToolUse:
 			chats = append(chats, &llm.ChatItem{

@@ -63,8 +63,8 @@ var AtCmds = []struct {
 	Gen  func() string
 }{
 	{Text: "@file:", Gen: func() string { return locales.Sprintf("file path of a file or directory") }},
+	{Text: "@img:", Gen: func() string { return locales.Sprintf("file path of an image") }},
 	//{Text: "@web ", Gen: func() string { return locales.Sprintf("use web search") }},
-	//{Text: "@img:", Gen: func() string { return locales.Sprintf("file path of a image") }},
 }
 
 func BergoCompleter(input string, cusorPos int) []*CompletionItem {
@@ -114,6 +114,25 @@ func BergoCompleterRaw(inputStr string, cusorPos int) []*CompletionItem {
 			for _, item := range pathItem {
 				completion := getCompletion(after, item.Text)
 				result = append(result, &CompletionItem{Text: item.Text, Description: item.Description, Completion: completion, AddSapce: true})
+			}
+		} else if strings.HasPrefix(atCmd, "@img:") {
+			after := strings.TrimPrefix(atCmd, "@img:")
+			path := after
+			if after == "" {
+				path = "."
+			}
+			if strings.Contains(path, " ") {
+				return result
+			}
+			nowPath.Update(path)
+			files := nowPath.MatchFiles(path)
+			for _, file := range files {
+				// 只补全图片文件和目录
+				isDir := strings.HasSuffix(file.Name, "/")
+				if isDir || utils.IsImageFile(file.Path) {
+					completion := getCompletion(after, file.Path)
+					result = append(result, &CompletionItem{Text: file.Path, Description: file.Name, Completion: completion, AddSapce: true})
+				}
 			}
 		} else {
 			atTrie.WalkPath(atCmd, func(key string, value interface{}) {

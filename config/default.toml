@@ -20,9 +20,9 @@ context_window = 131072
 
 
 [[models]]
-identifier = "minimax-m2"
+identifier = "minimax-m2.1"
 provider = "minimax"
-model_name = "MiniMax-M2"
+model_name = "MiniMax-M2.1"
 base_url = "https://api.minimaxi.com/anthropic"
 temperature = 1.0
 max_tokens = 65536

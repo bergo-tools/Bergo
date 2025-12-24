@@ -41,6 +41,19 @@ func (q *Query) Interrupt() {
 	q.IsInterrupted = true
 }
 
+// GetImageDataURL 获取第一个图片附件的 data URL（目前只支持单张图片）
+func (q *Query) GetImageDataURL() string {
+	for _, attachment := range q.Attachment {
+		if attachment.Type == AttachmentTypeImage {
+			dataURL, err := attachment.GetImageDataURL()
+			if err == nil {
+				return dataURL
+			}
+		}
+	}
+	return ""
+}
+
 func (q *Query) Build() string {
 	buf := bytes.NewBuffer(nil)
 
