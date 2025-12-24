@@ -97,10 +97,12 @@ type LLMPrinter struct {
 	interrupted bool
 }
 
+var style = glamour.WithAutoStyle()
+
 func NewLLMPrinter() *LLMPrinter {
 	width := pterm.GetTerminalWidth() * 7 / 10
 	render, _ := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
+		style,
 		glamour.WithWordWrap(width),
 	)
 	model := streamingWindow{
