@@ -85,6 +85,7 @@ type singleLineModel struct {
 	header      string
 	windowStart int // 滑动窗口的起始位置
 	windowEnd   int // 滑动窗口的结束位置
+	stop        bool
 }
 
 func initialSingleLineModel() singleLineModel {
@@ -93,10 +94,8 @@ func initialSingleLineModel() singleLineModel {
 	ti.Focus()
 	ti.Prompt = "▶︎"
 	ti.Width = pterm.GetTerminalWidth() - 2
-
 	// 初始化补全项
 	completions := []*CompletionItem{}
-
 	// 初始化滑动窗口，最多显示5项
 	maxVisible := 5
 	windowEnd := len(completions)
@@ -200,7 +199,7 @@ func (m singleLineModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				doCompletionCheck()
 				return m, nil
 			}
-			m.header = ""
+			m.stop = true
 			return m, tea.Quit
 		case tea.KeyDown:
 			if len(m.completions) > 0 {
@@ -254,6 +253,9 @@ var (
 )
 
 func (m singleLineModel) View() string {
+	if m.stop {
+		return ""
+	}
 	var headerView string
 	if m.header != "" {
 		headerView = m.header
