@@ -62,7 +62,7 @@ func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOu
 		a.timeline = &utils.Timeline{}
 		a.timeline.Init(a.sessionId)
 		a.timeline.Load()
-		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
+		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(false)
 		a.recoverySessionId = "" // 清除恢复标记
 	} else {
 		a.sessionId = time.Now().Format("20060102150405")
@@ -151,6 +151,9 @@ func isChanClose(signalChan chan os.Signal) bool {
 }
 func (a *Agent) doTask(ctx context.Context) {
 	defer utils.HideMementoFile(a.sessionId)
+	defer func() {
+		a.timeline.UpdateTokenUsage(a.stats.TokenUsageSession)
+	}()
 	//clean tail tool calls
 	a.timeline.CleanTailToolCalls()
 	a.timeline.SetTaskEpoch()
@@ -282,7 +285,6 @@ func (a *Agent) doTask(ctx context.Context) {
 			}
 		}
 	}
-
 }
 func (a *Agent) getCliInput() berio.BerInput {
 	attachments := make([]string, len(a.attachments))

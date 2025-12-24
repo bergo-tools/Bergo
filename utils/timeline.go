@@ -27,6 +27,7 @@ type Timeline struct {
 	Checkpoint       *Checkpoint
 	IsCheckPointInit bool
 	TaskEpoch        int64
+	LatestTokenUsage llm.TokenUsage // 最新的token用量，独立于checkpoint保存
 }
 type TimelineItem struct {
 	Type    string
@@ -203,8 +204,14 @@ func (t *Timeline) RevertToLastCheckpoint() {
 	t.Store()
 }
 
-// GetLastCheckpointTokenUsage 获取最后一个checkpoint的TokenUsage
-func (t *Timeline) GetLastCheckpointTokenUsage() llm.TokenUsage {
+// GetLastCheckpointTokenUsage 获取最新的TokenUsage
+// 优先返回 LatestTokenUsage，如果没有则从最后一个checkpoint获取
+func (t *Timeline) GetLastCheckpointTokenUsage(isReload bool) llm.TokenUsage {
+	// 优先返回独立保存的最新token用量
+	if isReload {
+		return t.LatestTokenUsage
+	}
+	// 否则从checkpoint中获取
 	for i := len(t.Items) - 1; i >= 0; i-- {
 		if t.Items[i].Type == TL_CheckpointSave {
 			if cpData, ok := t.Items[i].Data.(*CheckpointData); ok {
@@ -214,6 +221,12 @@ func (t *Timeline) GetLastCheckpointTokenUsage() llm.TokenUsage {
 		}
 	}
 	return llm.TokenUsage{}
+}
+
+// UpdateTokenUsage 更新最新的token用量并持久化
+func (t *Timeline) UpdateTokenUsage(tokenUsage llm.TokenUsage) {
+	t.LatestTokenUsage = tokenUsage
+	t.Store()
 }
 
 type LLMResponseItem struct {

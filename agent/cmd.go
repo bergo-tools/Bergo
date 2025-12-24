@@ -123,7 +123,7 @@ func (a *Agent) timelineCmd(input string) (string, bool) {
 		} else {
 			a.output.OnSystemMsg(locales.Sprintf("reverted to %v ", item.GitHash), berio.MsgTypeText)
 			// 恢复token用量
-			a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
+			a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(false)
 			reverted = true
 		}
 	}
@@ -133,7 +133,7 @@ func (a *Agent) timelineCmd(input string) (string, bool) {
 func (a *Agent) revertCmd(input string) (string, bool) {
 	a.timeline.RevertToLastCheckpoint()
 	// 恢复token用量
-	a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
+	a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(false)
 	a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------", berio.MsgTypeDump)
 	a.output.OnSystemMsg(a.timeline.PrintHistory(), berio.MsgTypeDump)
 	return "", true
@@ -169,7 +169,7 @@ func (a *Agent) loadSessionCmd(input string) (string, bool) {
 		a.timeline.Init(a.sessionId)
 		a.timeline.Load()
 		// 恢复token用量
-		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage()
+		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(true)
 		a.output.OnSystemMsg(locales.Sprintf("reload session: %v", sessionItem.SessionId), berio.MsgTypeText)
 		a.output.OnSystemMsg("-------------------------------------reload timeline-------------------------------------", berio.MsgTypeDump)
 		a.output.OnSystemMsg(a.timeline.PrintHistory(), berio.MsgTypeDump)

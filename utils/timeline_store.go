@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bergo/llm"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -43,12 +44,14 @@ func (t *Timeline) Store() {
 		Items            []*SerializableTimelineItem
 		Branch           string
 		IsCheckPointInit bool
+		LatestTokenUsage llm.TokenUsage
 	}{
 		MaxId:            t.MaxId,
 		SessionId:        t.SessionId,
 		Items:            serializableItems,
 		Branch:           t.Branch,
 		IsCheckPointInit: t.IsCheckPointInit,
+		LatestTokenUsage: t.LatestTokenUsage,
 	}
 
 	data, err := json.MarshalIndent(dataToSave, "", "  ")
@@ -81,6 +84,7 @@ func (t *Timeline) Load() {
 		Items            []*SerializableTimelineItem
 		Branch           string
 		IsCheckPointInit bool
+		LatestTokenUsage llm.TokenUsage
 	}
 
 	if err := json.Unmarshal(data, &savedData); err != nil {
@@ -92,6 +96,7 @@ func (t *Timeline) Load() {
 	t.SessionId = savedData.SessionId
 	t.Branch = savedData.Branch
 	t.IsCheckPointInit = savedData.IsCheckPointInit
+	t.LatestTokenUsage = savedData.LatestTokenUsage
 
 	// 将可序列化的项目转换回原始格式
 	t.Items = make([]*TimelineItem, len(savedData.Items))
