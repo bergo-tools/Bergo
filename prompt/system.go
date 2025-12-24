@@ -2,6 +2,7 @@ package prompt
 
 import (
 	"bergo/config"
+	"bergo/skills"
 	"bytes"
 	"io/ioutil"
 	"path/filepath"
@@ -25,6 +26,7 @@ func GetSystemPrompt() string {
 		AgentMd = loadAgentSuggestion()
 	})
 	agentSuggestion := AgentMd
+	skillsSummary := getSkillsSummary()
 
 	t := template.New("systemPrompt")
 	t, err := t.Parse(bergoSystemPrompt)
@@ -43,6 +45,7 @@ func GetSystemPrompt() string {
 		"Language":        language,
 		"Workspace":       workspace,
 		"AgentSuggestion": agentSuggestion,
+		"Skills":          skillsSummary,
 	})
 	if err != nil {
 		panic(err)
@@ -52,6 +55,11 @@ func GetSystemPrompt() string {
 
 var AgentMd string
 var OnceLoad sync.Once
+
+// getSkillsSummary 获取 skills 摘要
+func getSkillsSummary() string {
+	return skills.GetManager().GetSkillsSummary()
+}
 
 // loadAgentSuggestion 加载agents.md文件内容，文件名不区分大小写
 func loadAgentSuggestion() string {
@@ -146,4 +154,12 @@ var bergoSystemPrompt = `
 <suggestion>
 {{.AgentSuggestion}}
 </suggestion>
+{{if .Skills}}
+## Skills
+以下是可用的 Skills，当用户的任务与某个 skill 相关时，你可以读取对应的 SKILL.md 文件获取详细指导。
+Skills 位于工作目录的 .bergoskills 目录下。
+<skills>
+{{.Skills}}
+</skills>
+{{end}}
 `

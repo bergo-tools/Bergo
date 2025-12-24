@@ -4,12 +4,14 @@ import (
 	"bergo/agent"
 	"bergo/config"
 	"bergo/locales"
+	"bergo/skills"
 	"bergo/utils"
 	"bergo/utils/cli"
 	"bergo/wizard"
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"bergo/version"
 
@@ -109,6 +111,11 @@ func checkAndRecoverSession() string {
 	pterm.Success.Println(locales.Sprintf("Session recovered and reverted to last checkpoint"))
 	return lastSession.SessionId
 }
+func loadSkills() {
+	workspace, _ := filepath.Abs(".")
+	manager := skills.GetManager()
+	_ = manager.LoadSkills(workspace)
+}
 
 func main() {
 	utils.EnvInit()
@@ -122,6 +129,8 @@ func main() {
 	versionInfo := version.FormatVersion(version.Version, version.BuildTime, version.CommitHash)
 	pterm.Info.Println(fmt.Sprintf("Version %s", versionInfo))
 	fmt.Println("\n")
+	// 加载 skills
+	loadSkills()
 
 	// 检查更新
 	version.CheckAndHandleUpdates()
