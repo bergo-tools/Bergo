@@ -1,7 +1,8 @@
 package prompt
 
-var bergoAskModePrompt = `<mode>
-你处于Ask模式，在这个模式下，你可以使用各种工具来收集信息，回答用户问题，但是你绝对不能编辑文件。
+var bergoViewModePrompt = `<mode>
+你处于View模式，在这个模式下，你可以使用各种工具来收集信息，回答用户的问题。或者为用户提供Code Review的服务。
+但是你绝对不能编辑文件
 </mode>`
 
 var bergoAgentModePrompt = `<mode>
@@ -45,7 +46,7 @@ var bergoCompactModePrompt = `<mode>
 `
 
 const (
-	MODE_ASK           = "ask"
+	MODE_VIEW          = "view"
 	MODE_PLANNER       = "planner"
 	MODE_AGENT         = "agent"
 	MODE_DEBUG         = "debug"
@@ -55,7 +56,7 @@ const (
 )
 
 var bergoModes = map[string]string{
-	MODE_ASK:           bergoAskModePrompt,
+	MODE_VIEW:          bergoViewModePrompt,
 	MODE_PLANNER:       bergoPlannerModePrompt,
 	MODE_AGENT:         bergoAgentModePrompt,
 	MODE_DEBUG:         bergoDebugModePrompt,

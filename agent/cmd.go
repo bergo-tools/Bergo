@@ -16,7 +16,7 @@ func (a *Agent) initCmdHandler() {
 	a.cmdHandler = map[string]func(input string) (string, bool){
 		"/exit":      a.exitCmd,
 		"/help":      a.helpCmd,
-		"/ask":       a.askCmd,
+		"/view":      a.viewCmd,
 		"/planner":   a.plannerCmd,
 		"/agent":     a.agentCmd,
 		"/multiline": a.multilineCmd,
@@ -60,11 +60,11 @@ func (a *Agent) helpCmd(input string) (string, bool) {
 	a.output.Stop()
 	return "", true
 }
-func (a *Agent) askCmd(input string) (string, bool) {
+func (a *Agent) viewCmd(input string) (string, bool) {
 	left := strings.TrimPrefix(input, "/ask")
 	input = strings.TrimSpace(left)
-	a.agentMode = prompt.MODE_ASK
-	a.output.OnSystemMsg(locales.Sprintf("Switch to ASK mode"), berio.MsgTypeText)
+	a.agentMode = prompt.MODE_VIEW
+	a.output.OnSystemMsg(locales.Sprintf("Switch to VIEW mode"), berio.MsgTypeText)
 	return "", true
 }
 

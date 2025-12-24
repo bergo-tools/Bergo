@@ -14,7 +14,7 @@ var nowPath *utils.NowPath = utils.NewNowPath()
 var cmdsuggestions = []CompletionItem{
 	{Text: "/exit", Description: locales.Sprintf("exit bergo")},
 	{Text: "/help", Description: locales.Sprintf("instructions about bergo")},
-	{Text: "/ask", Description: locales.Sprintf("switch to ask mode")},
+	{Text: "/view", Description: locales.Sprintf("switch to view mode")},
 	{Text: "/planner", Description: locales.Sprintf("switch to planner mode")},
 	{Text: "/agent", Description: locales.Sprintf("switch to agent mode")},
 	{Text: "/multiline", Description: locales.Sprintf("switch to multiline input mode, ctrl+C to exit")},
