@@ -32,7 +32,7 @@ clean:
 
 # Cross-compile for all platforms
 .PHONY: cross
-cross: linux-amd64 linux-arm64 windows-amd64 windows-arm64
+cross: linux-amd64 linux-arm64 windows-amd64 windows-arm64 darwin-amd64 darwin-arm64
 
 
 # macOS amd64
