@@ -29,10 +29,23 @@ func GetManager() *Manager {
 	return globalManager
 }
 
+// LoadBuiltinSkills 释放内置skills到工作目录
+func (m *Manager) LoadBuiltinSkills(workDir string) error {
+	// 释放内置skills到工作目录的.bergoskills下
+	if err := ExtractBuiltinSkills(workDir); err != nil {
+		return fmt.Errorf("failed to extract builtin skills: %w", err)
+	}
+	return nil
+}
+
 // LoadSkills 从指定目录加载所有 skills
 func (m *Manager) LoadSkills(baseDir string) error {
 	skillsPath := filepath.Join(baseDir, SkillsDir)
+	return m.loadSkillsFromDir(skillsPath)
+}
 
+// loadSkillsFromDir 从指定的skills目录加载所有skills
+func (m *Manager) loadSkillsFromDir(skillsPath string) error {
 	// 检查目录是否存在
 	info, err := os.Stat(skillsPath)
 	if os.IsNotExist(err) {

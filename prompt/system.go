@@ -5,6 +5,7 @@ import (
 	"bergo/skills"
 	"bytes"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -66,7 +67,7 @@ func loadAgentSuggestion() string {
 	workspace, _ := filepath.Abs(".")
 
 	// 尝试查找agents.md文件（不区分大小写）
-	files, err := ioutil.ReadDir(workspace)
+	files, err := os.ReadDir(workspace)
 	if err != nil {
 		return ""
 	}
@@ -154,12 +155,14 @@ var bergoSystemPrompt = `
 <suggestion>
 {{.AgentSuggestion}}
 </suggestion>
+
 {{if .Skills}}
 ## Skills
-以下是可用的 Skills，当用户的任务与某个 skill 相关时，你可以读取对应的 SKILL.md 文件获取详细指导。
-Skills 位于工作目录的 .bergoskills 目录下。
-<skills>
+下面是一些你可以通过阅读文档学会的Skill
+当用户的任务与某个 skill 相关时，你可以读取对应的 SKILL.md 文件获取详细指导。
+该文档位于工作目录的 .bergoskills/skill-name 目录下。对应的Skill目录下还可能包含一些工具，脚本等等，请阅读文档了解。
+
 {{.Skills}}
-</skills>
+
 {{end}}
 `
