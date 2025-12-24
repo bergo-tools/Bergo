@@ -69,3 +69,5 @@ require (
 )
 
 replace github.com/c-bata/go-prompt v0.2.6 => github.com/bergo-tools/go-prompt v0.3.0
+
+replace github.com/veops/go-ansiterm v0.0.5 => github.com/bergo-tools/go-ansiterm v0.0.6

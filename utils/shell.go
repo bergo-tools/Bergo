@@ -140,7 +140,7 @@ func getFinalOutput(buff *bytes.Buffer) string {
 	screen := ansiterm.NewScreen(width, MAX_OUTPUT_LINE+2)
 
 	stream := ansiterm.InitByteStream(screen, false)
-
+	defer stream.Close()
 	stream.Attach(screen)
 
 	stream.Feed(buff.Bytes())

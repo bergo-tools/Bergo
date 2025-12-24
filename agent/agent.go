@@ -64,6 +64,7 @@ func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOu
 		a.timeline.Load()
 		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(false)
 		a.recoverySessionId = "" // 清除恢复标记
+		a.timeline.PrintHistory()
 	} else {
 		a.sessionId = time.Now().Format("20060102150405")
 		a.timeline = &utils.Timeline{}
