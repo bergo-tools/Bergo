@@ -102,6 +102,7 @@ var bergoSystemPrompt = `
 </attachment>
 <mode>
 用户会指示你以特定模式运行，请遵守，告诉你当前你的职责。*模式会被切换，请以最新的为准*
+目前有View, Planner, Agent模式, 还有一些作为SubAgent时启动的模式
 </mode>
 
 ## memento file
