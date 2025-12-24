@@ -13,7 +13,7 @@
 
 **Bergo** (Bot EngineeR in GO) 是一个基于 Golang 开发的命令行 AI Coding Agent，帮助开发者快速、高效地完成代码编写任务。
 
-> 本项目主要代码由 AI 编写。
+> 本项目主要代码由 AI 编写。同时没在 Windows 平台测试过，请最好不要在 Windows 平台使用。建议用linux/macos
 
 ## ✨ 特性
 
