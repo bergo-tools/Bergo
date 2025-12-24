@@ -35,10 +35,17 @@ type AnthropicContentBlock struct {
 	ToolUseID    string                 `json:"tool_use_id,omitempty"`
 	IsError      bool                   `json:"is_error,omitempty"`
 	CacheControl *AnthropicCacheControl `json:"cache_control,omitempty"`
+	Source       *AnthropicImageSource  `json:"source,omitempty"`
 
 	ID    string          `json:"id,omitempty"`
 	Name  string          `json:"name,omitempty"`
 	Input json.RawMessage `json:"input,omitempty"`
+}
+
+type AnthropicImageSource struct {
+	Type      string `json:"type"`
+	MediaType string `json:"media_type"`
+	Data      string `json:"data"`
 }
 
 type AnthropicCacheControl struct {
@@ -129,7 +136,7 @@ func (p *AnthropicProvider) Init(conf *config.ModelConfig) error {
 	p.modelName = conf.ModelName
 
 	if conf.BaseUrl == "" {
-		p.baseURL = "https://api.anthropic.com/v1"
+		p.baseURL = "https://api.anthropic.com"
 	} else {
 		p.baseURL = conf.BaseUrl
 	}
@@ -206,6 +213,20 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 				Text:         item.Message,
 				CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
 			}}
+			// 如果有图片，添加图片 block
+			if item.Img != "" {
+				mediaType, base64Data := parseDataURL(item.Img)
+				if base64Data != "" {
+					blocks = append(blocks, AnthropicContentBlock{
+						Type: "image",
+						Source: &AnthropicImageSource{
+							Type:      "base64",
+							MediaType: mediaType,
+							Data:      base64Data,
+						},
+					})
+				}
+			}
 			messages = append(messages, AnthropicMessage{Role: "user", Content: blocks})
 		case "assistant":
 			blocks := []AnthropicContentBlock{}
@@ -262,6 +283,22 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 	return system, messages
 }
 
+// parseDataURL 解析 data URL，返回 MIME 类型和 base64 数据
+// 格式: data:image/jpeg;base64,{base64_data}
+func parseDataURL(dataURL string) (mediaType string, base64Data string) {
+	if !strings.HasPrefix(dataURL, "data:") {
+		return "", ""
+	}
+	// 去掉 "data:" 前缀
+	rest := strings.TrimPrefix(dataURL, "data:")
+	// 找到 ";base64," 分隔符
+	parts := strings.SplitN(rest, ";base64,", 2)
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
+
 func (p *AnthropicProvider) convertTools(tools []*ToolSchema) []AnthropicTool {
 	if len(tools) == 0 {
 		return nil
@@ -306,7 +343,7 @@ func (p *AnthropicProvider) createRequest(chatItems []*ChatItem, tools []*ToolSc
 }
 
 func (p *AnthropicProvider) sendHTTPRequest(ctx context.Context, requestBody []byte) (*http.Response, error) {
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/messages", bytes.NewBuffer(requestBody))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/v1/messages", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, locales.Errorf("failed to create request: %w", err)
 	}
@@ -535,10 +572,6 @@ func (p *AnthropicProvider) StreamResponse(ctx context.Context, req *Request) <-
 	return responseChan
 }
 
-func (p *AnthropicProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	return p.StreamResponse(ctx, req)
-}
-
 func (p *AnthropicProvider) ListModels() ([]string, error) {
 	httpReq, err := http.NewRequest("GET", p.baseURL+"/models", nil)
 	if err != nil {
@@ -575,4 +608,78 @@ func (p *AnthropicProvider) ListModels() ([]string, error) {
 		}
 	}
 	return models, nil
+}
+
+// AnthropicCountTokensRequest is the request body for the count tokens API
+type AnthropicCountTokensRequest struct {
+	Model    string             `json:"model"`
+	Messages []AnthropicMessage `json:"messages"`
+	System   any                `json:"system,omitempty"`
+	Tools    []AnthropicTool    `json:"tools,omitempty"`
+	Thinking *AnthropicThinking `json:"thinking,omitempty"`
+}
+
+// AnthropicCountTokensResponse is the response from the count tokens API
+type AnthropicCountTokensResponse struct {
+	InputTokens int `json:"input_tokens"`
+}
+
+// CountTokens counts the number of tokens in the given request
+func (p *AnthropicProvider) CountTokens(ctx context.Context, req *Request) (int, error) {
+	system, messages := p.convertMessages(req.ChatItems)
+
+	countReq := &AnthropicCountTokensRequest{
+		Model:    p.modelName,
+		Messages: messages,
+		Tools:    p.convertTools(req.Tools),
+	}
+
+	if system != "" {
+		countReq.System = []AnthropicContentBlock{{
+			Type:         "text",
+			Text:         system,
+			CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
+		}}
+	}
+
+	if p.think {
+		countReq.Thinking = &AnthropicThinking{Type: "enabled", BudgetTokens: p.thinkingBudget}
+	}
+
+	requestBody, err := json.Marshal(countReq)
+	if err != nil {
+		return 0, locales.Errorf("failed to marshal count tokens request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/v1/messages/count_tokens", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return 0, locales.Errorf("failed to create count tokens request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-api-key", p.apiKey)
+	httpReq.Header.Set("anthropic-version", p.anthropicVersion)
+
+	resp, err := p.httpClient.Do(httpReq)
+	if err != nil {
+		return 0, locales.Errorf("failed to send count tokens request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return 0, locales.Errorf("count tokens API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, locales.Errorf("failed to read count tokens response: %w", err)
+	}
+
+	var countResp AnthropicCountTokensResponse
+	if err := json.Unmarshal(body, &countResp); err != nil {
+		return 0, locales.Errorf("failed to unmarshal count tokens response: %w", err)
+	}
+
+	return countResp.InputTokens, nil
 }

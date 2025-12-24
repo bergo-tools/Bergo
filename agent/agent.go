@@ -38,6 +38,9 @@ type Agent struct {
 	sessionId string
 
 	InteruptNum int
+
+	// 用于恢复异常退出的 session
+	recoverySessionId string
 }
 
 func NewMainAgent() *Agent {
@@ -47,10 +50,25 @@ func NewMainAgent() *Agent {
 	}
 }
 
+// SetRecoverySession 设置需要恢复的 session ID（用于异常退出后恢复）
+func (a *Agent) SetRecoverySession(sessionId string) {
+	a.recoverySessionId = sessionId
+}
+
 func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOutput {
-	a.sessionId = time.Now().Format("20060102150405")
-	a.timeline = &utils.Timeline{}
-	a.timeline.Init(a.sessionId)
+	// 检查是否有需要恢复的 session
+	if a.recoverySessionId != "" {
+		a.sessionId = a.recoverySessionId
+		a.timeline = &utils.Timeline{}
+		a.timeline.Init(a.sessionId)
+		a.timeline.Load()
+		a.stats.TokenUsageSession = a.timeline.GetLastCheckpointTokenUsage(false)
+		a.recoverySessionId = "" // 清除恢复标记
+	} else {
+		a.sessionId = time.Now().Format("20060102150405")
+		a.timeline = &utils.Timeline{}
+		a.timeline.Init(a.sessionId)
+	}
 	a.allowMap = make(map[string]bool)
 	a.output = berio.NewCliOutput()
 	output := a.output
@@ -122,8 +140,20 @@ func StopGap() {
 	var input string
 	fmt.Scanf("%s", &input)
 }
+
+func isChanClose(signalChan chan os.Signal) bool {
+	select {
+	case _, ok := <-signalChan:
+		return !ok
+	default:
+		return false
+	}
+}
 func (a *Agent) doTask(ctx context.Context) {
 	defer utils.HideMementoFile(a.sessionId)
+	defer func() {
+		a.timeline.UpdateTokenUsage(a.stats.TokenUsageSession)
+	}()
 	//clean tail tool calls
 	a.timeline.CleanTailToolCalls()
 	a.timeline.SetTaskEpoch()
@@ -131,7 +161,18 @@ func (a *Agent) doTask(ctx context.Context) {
 	output := a.output
 	toolCallAnswers := []*tools.AgentOutput{}
 	keepGoing := true
+	signalChan := make(chan os.Signal, 1)
+	defer func() {
+		if !isChanClose(signalChan) {
+			close(signalChan)
+		}
+		signal.Reset(os.Interrupt)
+	}()
 	for {
+		if !isChanClose(signalChan) {
+			close(signalChan)
+		}
+		signal.Reset(os.Interrupt)
 		output.Stop() //just in case
 		if a.stop {
 			break
@@ -153,7 +194,13 @@ func (a *Agent) doTask(ctx context.Context) {
 		chatItems = llm.InjectSystemPrompt(chatItems, prompt.GetSystemPrompt())
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		cli.SetCancelFunc(cancel)
-		a.captureSignal(cancel)
+
+		signalChan = make(chan os.Signal, 1)
+		signal.Notify(signalChan, os.Interrupt)
+		go func() {
+			<-signalChan
+			cancel()
+		}()
 		content := bytes.NewBuffer(nil)
 		reasoningContent := bytes.NewBuffer(nil)
 
@@ -162,7 +209,7 @@ func (a *Agent) doTask(ctx context.Context) {
 			output.OnSystemMsg(locales.Sprintf("error: %v", err), berio.MsgTypeWarning)
 			break
 		}
-		output.OnSystemMsg(utils.LLMInputStyle("🤖Bergo: "), berio.MsgTypeDump)
+		output.OnSystemMsg(utils.LLMInputStyle("🤖|Bergo: "), berio.MsgTypeDump)
 		for streamer.Next() {
 			rc, c, toolNames := streamer.ReadWithTool()
 			content.WriteString(c)
@@ -204,11 +251,19 @@ func (a *Agent) doTask(ctx context.Context) {
 
 		//Tool use if any
 		hasStopLoop := false
+		if config.GlobalConfig.Debug {
+			var tools []string
+			for _, call := range toolCallRequests {
+				tools = append(tools, call.Function.Name)
+			}
+			cli.PrintDebugText("tool calls: %v", tools)
+		}
 		if len(toolCallRequests) > 0 {
 			for _, call := range toolCallRequests {
 				if call.Function.Name == tools.TOOL_STOP_LOOP {
 					hasStopLoop = true
 				}
+				cli.PrintDebugText("calling tool: %v", call.Function.Name)
 				answer, err := a.doToolUse(ctxWithCancel, call)
 				if err != nil {
 					a.output.OnSystemMsg(locales.Sprintf("error when tool call: %v", err), berio.MsgTypeWarning)
@@ -230,7 +285,6 @@ func (a *Agent) doTask(ctx context.Context) {
 			}
 		}
 	}
-
 }
 func (a *Agent) getCliInput() berio.BerInput {
 	attachments := make([]string, len(a.attachments))
@@ -270,7 +324,7 @@ func (a *Agent) readFromUser() string {
 
 func (a *Agent) saveCheckPoint() {
 	commit := "auto save"
-	hash := a.timeline.CheckpointSave(commit)
+	hash := a.timeline.CheckpointSave(commit, a.stats.TokenUsageSession)
 	if hash != "" {
 		a.output.OnSystemMsg(locales.Sprintf("checkpoint saved, hash: %v", hash), berio.MsgTypeText)
 	}
@@ -344,7 +398,7 @@ var atCmdRegex = regexp.MustCompile(`@\S+`)
 func (a *Agent) processAtCommand(userInput string) (string, bool) {
 	matches := atCmdRegex.FindAllString(userInput, -1)
 	// 将提取的@字符串转换为Attachment对象并存储
-	index := 0
+	index := 1
 	var attachments []*utils.Attachment
 	for _, match := range matches {
 		if strings.HasPrefix(match, "@file:") {
@@ -354,7 +408,7 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 				a.output.OnSystemMsg(locales.Sprintf("invalid file path: %v", path), berio.MsgTypeWarning)
 				return "", false
 			}
-			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("@attchment %d@", index))
+			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("[bergo-attch %d]", index))
 			if stat.IsDir() {
 				attachments = append(attachments, &utils.Attachment{
 					Index: index,
@@ -368,6 +422,24 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 					Type:  utils.AttachmentTypeFile,
 				})
 			}
+			index++
+		} else if strings.HasPrefix(match, "@img:") {
+			path := strings.TrimPrefix(match, "@img:")
+			_, err := os.Stat(path)
+			if err != nil {
+				a.output.OnSystemMsg(locales.Sprintf("invalid image path: %v", path), berio.MsgTypeWarning)
+				return "", false
+			}
+			if !utils.IsImageFile(path) {
+				a.output.OnSystemMsg(locales.Sprintf("unsupported image format: %v", path), berio.MsgTypeWarning)
+				return "", false
+			}
+			userInput = strings.ReplaceAll(userInput, match, fmt.Sprintf("[bergo-attch %d]", index))
+			attachments = append(attachments, &utils.Attachment{
+				Index: index,
+				Path:  path,
+				Type:  utils.AttachmentTypeImage,
+			})
 			index++
 		}
 

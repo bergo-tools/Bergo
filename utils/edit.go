@@ -71,6 +71,7 @@ func (e *Edit) EditByDiff(search string, replace string) error {
 	success := 0
 	endIdx := 0
 	startIdx := 0
+	var successfulResult [][]int
 	for i := 0; i < len(allLines); i++ {
 		trimLine := strings.TrimSpace(allLines[i])
 		if trimLine == "" {
@@ -88,6 +89,7 @@ func (e *Edit) EditByDiff(search string, replace string) error {
 			success += 1
 			endIdx = i
 			searchLineIdx = 0
+			successfulResult = append(successfulResult, []int{startIdx, endIdx})
 		}
 	}
 	if success == 0 {
@@ -96,6 +98,7 @@ func (e *Edit) EditByDiff(search string, replace string) error {
 	if success > 1 {
 		return ErrEditMultipleMatch
 	}
+	startIdx, endIdx = successfulResult[0][0], successfulResult[0][1]
 	buf := bytes.NewBuffer(nil)
 	for i := 0; i < startIdx; i++ {
 		buf.WriteString(allLines[i])

@@ -112,11 +112,6 @@ func EditDiff(ctx context.Context, input *AgentInput) *AgentOutput {
 	}
 	search := stub.Search
 	replace := stub.Replace
-	if err != nil {
-		return &AgentOutput{
-			Error: fmt.Errorf("failed to parse start_line because: %s", err.Error()),
-		}
-	}
 	err = edit.EditByDiff(search, replace)
 	if err != nil {
 		return &AgentOutput{
@@ -197,7 +192,7 @@ var EditDiffToolDesc = &ToolDesc{
 
 var EditWholeToolDesc = &ToolDesc{
 	Name:   TOOL_EDIT_WHOLE,
-	Intent: locales.Sprintf("Bergo want to edit file"),
+	Intent: locales.Sprintf("Bergo is editing file"),
 	Schema: EditWholeSchema(),
 	OutputFunc: func(call *llm.ToolCall, content string) string {
 		stub := EditWholeToolResult{}

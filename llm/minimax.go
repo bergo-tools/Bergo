@@ -29,7 +29,7 @@ func (p *MinimaxProvider) Init(conf *config.ModelConfig) error {
 	p.modelName = conf.ModelName
 
 	// 设置 Minimax API 的默认 base URL
-	p.baseURL = "https://api.minimaxi.com/anthropic/v1"
+	p.baseURL = "https://api.minimaxi.com/anthropic"
 
 	// 设置温度参数
 	p.temperature = conf.Temperature
@@ -68,10 +68,6 @@ func (p *MinimaxProvider) Init(conf *config.ModelConfig) error {
 }
 func (p *MinimaxProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.AnthropicProvider.StreamResponse(ctx, req)
-}
-func (p *MinimaxProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
 }
 
 func (p *MinimaxProvider) ListModels() ([]string, error) {

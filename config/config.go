@@ -18,6 +18,7 @@ type Config struct {
 	Language          string         `toml:"language,omitempty"`
 	HttpProxy         string         `toml:"http_proxy,omitempty"`
 	CompactThreshold  float64        `toml:"compact_threshold,omitempty"`
+	MaxSessionCount   int            `toml:"max_session_count,omitempty"`
 
 	DeepseekApiKey   string `toml:"deepseek_api_key,omitempty"`
 	OpenaiApiKey     string `toml:"openai_api_key,omitempty"`
@@ -43,6 +44,7 @@ type ModelConfig struct {
 	ReasoningTag     string  `toml:"reasoning_tag,omitempty"`
 	Prefill          bool    `toml:"prefill,omitempty"`
 	Think            bool    `toml:"think,omitempty"`
+	RateLimitInterval float64 `toml:"rate_limit_interval,omitempty"` // 限流间隔（秒）
 }
 
 func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {
@@ -85,6 +87,9 @@ func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {
 	if Think := userDefine.Think; Think {
 		c.Think = Think
 	}
+	if RateLimitInterval := userDefine.RateLimitInterval; RateLimitInterval != 0 {
+		c.RateLimitInterval = RateLimitInterval
+	}
 
 }
 
@@ -113,6 +118,7 @@ func setDefault() {
 	if GlobalConfig.CompactThreshold == 0 {
 		GlobalConfig.CompactThreshold = 0.8 //默认0.8
 	}
+	// MaxSessionCount 默认为0，表示不限制session数量
 
 	if GlobalConfig.DeepseekApiKey != "" {
 		for _, model := range GlobalConfig.Models {

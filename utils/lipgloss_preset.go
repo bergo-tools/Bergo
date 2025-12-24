@@ -10,7 +10,7 @@ import (
 func ReasoningStyle(message string) string {
 	width := pterm.GetTerminalWidth() * 7 / 10
 	color := lipgloss.AdaptiveColor{Dark: "#27F5F2", Light: "#079C99"}
-	mainText := lipgloss.NewStyle().Width(width).Foreground(color).Render("Thinking: \n" + message)
+	mainText := lipgloss.NewStyle().Width(width).Foreground(color).Render("🤖|Bergo Thinking:\n" + message)
 	return lipgloss.NewStyle().Border(lipgloss.ThickBorder()).BorderForeground(color).Padding(0, 1).BorderLeft(true).BorderTop(false).BorderRight(false).BorderBottom(false).Render(mainText) + "\n"
 }
 
@@ -42,7 +42,7 @@ func SearchReplaceStyle(file string, search string, replace string) string {
 	replaceCont := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width).Render(replace)
 	if search == "" {
 		replaceCont = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Width(width * 2).Render(replace)
-		replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf(" Write to file: %s", file), replaceCont)
+		replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf("Write to file: %s", file), replaceCont)
 		return replaceCont
 	}
 	replaceCont = lipgloss.JoinVertical(lipgloss.Left, locales.Sprintf("Replace: "), replaceCont)
@@ -62,7 +62,7 @@ func UserQueryStyle(message string) string {
 
 func LLMInputStyle(message string) string {
 	width := pterm.GetTerminalWidth() * 7 / 10
-	color := lipgloss.AdaptiveColor{Dark: "#5e94dcff", Light: "#229be6ff"}
+	color := lipgloss.AdaptiveColor{Dark: "#27F5F2", Light: "#079C99"}
 	mainText := lipgloss.NewStyle().Width(width).Foreground(color).Bold(true).Render(message)
 	return lipgloss.NewStyle().Border(lipgloss.ThickBorder()).BorderForeground(color).BorderLeft(true).BorderTop(false).BorderRight(false).BorderBottom(false).Padding(0, 1).Render(mainText) + "\n"
 }

@@ -9,29 +9,14 @@ BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 COMMIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # Go build flags
-LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.commitHash=$(COMMIT_HASH)"
+LDFLAGS := -ldflags "-X bergo/version.Version=$(VERSION) -X bergo/version.BuildTime=$(BUILD_TIME) -X bergo/version.CommitHash=$(COMMIT_HASH)"
 GO_BUILD_FLAGS := -trimpath
-
-# Zig settings for CGO cross-compilation
-# Zig acts as a drop-in replacement for gcc/clang
-export CC = zig cc
-export CXX = zig c++
-
-# Target platforms for cross-compilation
-# Format: GOOS/GOARCH/Zig-target
-PLATFORMS := \
-	darwin/amd64/x86_64-macos \
-	darwin/arm64/aarch64-macos \
-	linux/amd64/x86_64-linux-musl \
-	linux/arm64/aarch64-linux-musl \
-	windows/amd64/x86_64-windows \
-	windows/arm64/aarch64-windows
 
 # Default target
 .PHONY: all
 all: build
 
-# Build for current platform
+# Build for current platform (no CGO cross-compile needed)
 .PHONY: build
 build:
 	@echo "Building $(BINARY_NAME) for current platform..."
@@ -46,38 +31,89 @@ clean:
 
 # Cross-compile for all platforms
 .PHONY: cross
-cross: $(PLATFORMS)
+cross: darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 windows-amd64 windows-arm64
 
-# Pattern rule for cross-compilation
-define cross-compile
-.PHONY: $(1)
-$(1):
-	@echo "Building for $(1)..."
+# macOS amd64
+.PHONY: darwin-amd64
+darwin-amd64:
+	@echo "Building for darwin/amd64..."
 	@mkdir -p dist
-	$(eval GOOS := $(word 1,$(subst /, ,$(1))))
-	$(eval GOARCH := $(word 2,$(subst /, ,$(1))))
-	$(eval ZIG_TARGET := $(word 3,$(subst /, ,$(1))))
-	@echo "  GOOS=$(GOOS) GOARCH=$(GOARCH) ZIG_TARGET=$(ZIG_TARGET)"
-	CC="zig cc -target $(ZIG_TARGET)" \
-	CXX="zig c++ -target $(ZIG_TARGET)" \
+	CC="zig cc -target x86_64-macos" \
+	CXX="zig c++ -target x86_64-macos" \
 	CGO_ENABLED=1 \
-	GOOS=$(GOOS) \
-	GOARCH=$(GOARCH) \
-	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-$(GOOS)-$(GOARCH)$(if $(filter windows,$(GOOS)),.exe,) $(MAIN_PACKAGE)
-endef
+	GOOS=darwin \
+	GOARCH=amd64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 $(MAIN_PACKAGE)
 
-# Generate cross-compilation targets
-$(foreach platform,$(PLATFORMS),$(eval $(call cross-compile,$(platform))))
+# macOS arm64
+.PHONY: darwin-arm64
+darwin-arm64:
+	@echo "Building for darwin/arm64..."
+	@mkdir -p dist
+	CC="zig cc -target aarch64-macos" \
+	CXX="zig c++ -target aarch64-macos" \
+	CGO_ENABLED=1 \
+	GOOS=darwin \
+	GOARCH=arm64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 $(MAIN_PACKAGE)
+
+# Linux amd64
+.PHONY: linux-amd64
+linux-amd64:
+	@echo "Building for linux/amd64..."
+	@mkdir -p dist
+	CC="zig cc -target x86_64-linux-musl" \
+	CXX="zig c++ -target x86_64-linux-musl" \
+	CGO_ENABLED=1 \
+	GOOS=linux \
+	GOARCH=amd64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 $(MAIN_PACKAGE)
+
+# Linux arm64
+.PHONY: linux-arm64
+linux-arm64:
+	@echo "Building for linux/arm64..."
+	@mkdir -p dist
+	CC="zig cc -target aarch64-linux-musl" \
+	CXX="zig c++ -target aarch64-linux-musl" \
+	CGO_ENABLED=1 \
+	GOOS=linux \
+	GOARCH=arm64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 $(MAIN_PACKAGE)
+
+# Windows amd64
+.PHONY: windows-amd64
+windows-amd64:
+	@echo "Building for windows/amd64..."
+	@mkdir -p dist
+	CC="zig cc -target x86_64-windows-gnu" \
+	CXX="zig c++ -target x86_64-windows-gnu" \
+	CGO_ENABLED=1 \
+	GOOS=windows \
+	GOARCH=amd64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe $(MAIN_PACKAGE)
+
+# Windows arm64
+.PHONY: windows-arm64
+windows-arm64:
+	@echo "Building for windows/arm64..."
+	@mkdir -p dist
+	CC="zig cc -target aarch64-windows-gnu" \
+	CXX="zig c++ -target aarch64-windows-gnu" \
+	CGO_ENABLED=1 \
+	GOOS=windows \
+	GOARCH=arm64 \
+	go build $(GO_BUILD_FLAGS) $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe $(MAIN_PACKAGE)
 
 # Quick cross-compile for common platforms
 .PHONY: darwin
-darwin: darwin/amd64 darwin/arm64
+darwin: darwin-amd64 darwin-arm64
 
 .PHONY: linux
-linux: linux/amd64 linux/arm64
+linux: linux-amd64 linux-arm64
 
 .PHONY: windows
-windows: windows/amd64 windows/arm64
+windows: windows-amd64 windows-arm64
 
 # Run the application
 .PHONY: run
@@ -94,18 +130,20 @@ deps:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all/build    - Build for current platform"
-	@echo "  clean        - Remove build artifacts"
-	@echo "  cross        - Cross-compile for all platforms"
-	@echo "  darwin       - Cross-compile for macOS (amd64 + arm64)"
-	@echo "  linux        - Cross-compile for Linux (amd64 + arm64)"
-	@echo "  windows      - Cross-compile for Windows (amd64 + arm64)"
-	@echo "  run          - Run the application"
-	@echo "  deps         - Download and tidy dependencies"
-	@echo "  help         - Show this help"
+	@echo "  all/build      - Build for current platform"
+	@echo "  clean          - Remove build artifacts"
+	@echo "  cross          - Cross-compile for all platforms"
+	@echo "  darwin         - Cross-compile for macOS (amd64 + arm64)"
+	@echo "  linux          - Cross-compile for Linux (amd64 + arm64)"
+	@echo "  windows        - Cross-compile for Windows (amd64 + arm64)"
+	@echo "  run            - Run the application"
+	@echo "  deps           - Download and tidy dependencies"
+	@echo "  help           - Show this help"
 	@echo ""
 	@echo "Individual platform targets:"
-	@for platform in $(PLATFORMS); do \
-		platform_name=$$(echo $$platform | cut -d'/' -f1,2); \
-		echo "  $$platform_name"; \
-	done
+	@echo "  darwin-amd64   - macOS Intel"
+	@echo "  darwin-arm64   - macOS Apple Silicon"
+	@echo "  linux-amd64    - Linux x86_64"
+	@echo "  linux-arm64    - Linux ARM64"
+	@echo "  windows-amd64  - Windows x86_64"
+	@echo "  windows-arm64  - Windows ARM64"

@@ -6,6 +6,8 @@ import (
 	"bergo/locales"
 
 	"context"
+	"sync"
+	"time"
 )
 
 type LlmStreamer struct {
@@ -27,7 +29,42 @@ type LlmStreamer struct {
 	toolCalls  []*llm.ToolCall
 }
 
+// rateLimitManager 管理每个模型的限流状态
+type rateLimitManager struct {
+	mu            sync.Mutex
+	lastRequestAt map[string]time.Time // 按模型标识存储上次请求时间
+}
+
+var globalRateLimitManager = &rateLimitManager{
+	lastRequestAt: make(map[string]time.Time),
+}
+
+// applyRateLimit 应用限流，如果需要则等待
+func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval float64) {
+	if interval <= 0 {
+		return // 没有限流
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	lastAt, exists := m.lastRequestAt[modelIdentifier]
+	if exists {
+		elapsed := time.Since(lastAt)
+		required := time.Duration(interval * float64(time.Second))
+		if elapsed < required {
+			// 需要等待
+			waitTime := required - elapsed
+			time.Sleep(waitTime)
+		}
+	}
+	// 更新最后请求时间
+	m.lastRequestAt[modelIdentifier] = time.Now()
+}
+
 func NewLlmStreamer(userContext context.Context, model *config.ModelConfig, chats []*llm.ChatItem, tools []*llm.ToolSchema) (*LlmStreamer, error) {
+	// 应用限流
+	globalRateLimitManager.applyRateLimit(model.Identifier, model.RateLimitInterval)
 	provider := llm.ProviderFactory(model.Provider)
 	err := provider.Init(model)
 	if err != nil {
@@ -140,8 +177,10 @@ func (s *LlmStreamer) Next() bool {
 			return true
 		}
 		if resp.FinishReason != "" {
+			if resp.FinishReason == llm.FinishReasonLength || resp.FinishReason == llm.FinishReasonToolCalls || resp.FinishReason == llm.FinishReasonNull {
+				return true
+			}
 			s.err = locales.Errorf("finish reason: %s", resp.FinishReason)
-			return true
 		}
 		return true
 	}

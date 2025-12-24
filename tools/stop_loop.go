@@ -29,7 +29,7 @@ func StopLoopSchema() *llm.ToolSchema {
 		Type: "function",
 		Function: llm.ToolFunctionDefinition{
 			Name:        TOOL_STOP_LOOP,
-			Description: "stop_loop是用来中断当前agentic循环的一个工具。它可以用来做以下事情:1.当你完成了你的工作后，给一个简短的总结，说明你做了什么。*如果处于Agent模式下，调用该工具前必须确保Session File已经更新到最新* 2.需要向用户寻求一些你找不到的信息",
+			Description: "stop_loop是用来中断当前agentic循环的一个工具，当你完成了你的工作后，给一个简短的总结",
 			Parameters: llm.ToolParameters{
 				Type: "object",
 				Properties: map[string]llm.ToolProperty{

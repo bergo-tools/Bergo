@@ -58,7 +58,7 @@ func (p *XiaomiProvider) Init(conf *config.ModelConfig) error {
 	}
 
 	// 设置小米思考模式
-	p.xiaomiThink = conf.Think
+	p.thinking = conf.Think
 
 	// 创建 HTTP 客户端
 	p.httpClient = &http.Client{}
@@ -80,10 +80,6 @@ func (p *XiaomiProvider) Init(conf *config.ModelConfig) error {
 }
 func (p *XiaomiProvider) StreamResponse(ctx context.Context, req *Request) <-chan *Response {
 	return p.OpenAIProvider.StreamResponse(ctx, req)
-}
-func (p *XiaomiProvider) StreamResponseWithImgInput(ctx context.Context, req *Request) <-chan *Response {
-	//不支持
-	return nil
 }
 
 func (p *XiaomiProvider) ListModels() ([]string, error) {

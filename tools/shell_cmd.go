@@ -13,7 +13,6 @@ import (
 const (
 	TOOL_SHELL_CMD = "shell_cmd"
 )
-const MAX_SHELL_OUTPUT_LEN = 5000
 
 func ShellCommand(ctx context.Context, input *AgentInput) *AgentOutput {
 	stub := &ShellCmdToolResult{}
@@ -29,14 +28,22 @@ func ShellCommand(ctx context.Context, input *AgentInput) *AgentOutput {
 			input.AllowMap[TOOL_SHELL_CMD] = true
 		}
 	}
-	shell := utils.Shell{}
-	result := shell.Run(stub.Command)
+	shell := utils.Shell{IsTask: input.isTask}
+
+	result, err := shell.Run(stub.Command)
+	if err != nil {
+		return &AgentOutput{
+			Error:    err,
+			ToolCall: input.ToolCall,
+		}
+	}
 	count := strings.Count(result, "\n")
-	if count > MAX_SHELL_OUTPUT_LEN {
+	if count > utils.MAX_OUTPUT_LINE {
 		return &AgentOutput{
 			Error: fmt.Errorf("the output is too long, try some commands to filter the output or save output as a file and read it later"),
 		}
 	}
+	result = fmt.Sprintf("result:\n%s", result)
 	return &AgentOutput{
 		Content:  result,
 		ToolCall: input.ToolCall,
@@ -52,7 +59,7 @@ func ShellCmdSchema() *llm.ToolSchema {
 		Type: "function",
 		Function: llm.ToolFunctionDefinition{
 			Name:        TOOL_SHELL_CMD,
-			Description: "shell_cmd是用来运行命令的一个工具，你可以用它来运行诸如grep、ls, find等命令。支持管道操作。只接受一行命令，存在换行会截断，*禁止运行需要用户交互的程序，会卡死的*",
+			Description: "shell_cmd是用来运行命令的一个工具，你可以用它来运行诸如grep、ls, find等命令。支持管道操作。只接受一行命令，存在换行会截断，*不要运行需要用户交互的程序*",
 			Parameters: llm.ToolParameters{
 				Type: "object",
 				Properties: map[string]llm.ToolProperty{
@@ -74,6 +81,6 @@ var ShellCmdToolDesc = &ToolDesc{
 	OutputFunc: func(call *llm.ToolCall, content string) string {
 		stub := &ShellCmdToolResult{}
 		json.Unmarshal([]byte(call.Function.Arguments), stub)
-		return locales.Sprintf("command: %s\n%s\n", stub.Command, content)
+		return utils.InfoMessageStyle(locales.Sprintf("command executed: %s", stub.Command))
 	},
 }

@@ -284,7 +284,7 @@ func (m HistoryListModel) detailView() string {
 		PaddingLeft(2).
 		PaddingRight(2).
 		MarginBottom(1)
-	b.WriteString(titleStyle.Render("Detail View"))
+	b.WriteString(titleStyle.Render(locales.Sprintf("Detail View")))
 	b.WriteString("\n")
 
 	// 详情内容（使用viewport实现滚动）
@@ -297,7 +297,7 @@ func (m HistoryListModel) detailView() string {
 		contentStyle := lipgloss.NewStyle().
 			PaddingLeft(4).
 			PaddingRight(4)
-		b.WriteString(contentStyle.Render("Actions:"))
+		b.WriteString(contentStyle.Render(locales.Sprintf("Actions:")))
 		b.WriteString("\n")
 
 		// 横向显示操作选项

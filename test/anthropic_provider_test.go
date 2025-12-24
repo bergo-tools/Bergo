@@ -31,14 +31,14 @@ func TestAnthropicProviderStreamingText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read config: %v", err)
 	}
-	c := config.GlobalConfig.GetModelConfig("mimo-v2-flash-thinking")
+	c := config.GlobalConfig.GetModelConfig("op-m2.1")
 	streamer, err := utils.NewLlmStreamer(context.Background(), c, []*llm.ChatItem{
 		{
 			Message: "You are a helpful assistant.",
 			Role:    "system",
 		},
 		{
-			Message: "<user_input>你好,能尝试调用下提供的工具吗，参数随便填.</user_input>",
+			Message: "你好,能尝试调用下提供的工具吗，参数随便填.",
 			Role:    "user",
 		},
 	}, []*llm.ToolSchema{test_func})
