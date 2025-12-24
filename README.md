@@ -97,6 +97,23 @@ deepseek_api_key = "your-api-key"
 # minimax_api_key = "your-api-key"
 # kimi_api_key = "your-api-key"
 # openai_api_key = "your-api-key"
+
+#添加模型
+[[models]]
+# 标识符，用于在配置中引用
+identifier = "opus" 
+# 模型供应商，用于选择不同的 LLM 提供商
+provider = "anthropic"
+# 模型ID，用于指定具体的 LLM 模型
+model_name = "claude-opus-4-5"
+# API 密钥，用于访问 LLM 服务
+api_key = ""
+# 基础 URL，用于构建 API 请求路径
+base_url = "https://code.newcli.com/claude/aws"
+temperature = 0.7
+max_tokens = 65535
+# 上下文窗口大小，用于限制模型输入的最大 token 数量,推荐填写
+context_window = 204800
 ```
 
 完整配置示例参见 [example_config.toml](./example_config.toml)
