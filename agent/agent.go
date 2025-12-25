@@ -450,8 +450,8 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 				return "", false
 			}
 			path := strings.TrimPrefix(match, "@img:")
-			_, err := os.Stat(path)
-			if err != nil {
+			stats, err := os.Stat(path)
+			if err != nil || stats.IsDir() {
 				a.output.OnSystemMsg(locales.Sprintf("invalid image path: %v", path), berio.MsgTypeWarning)
 				return "", false
 			}

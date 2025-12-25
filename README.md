@@ -123,6 +123,7 @@ provider = "openai"              # 服务商: openai/anthropic/deepseek/minimax/
 model_name = "gpt-4o"            # 实际模型名称
 api_key = "sk-xxx"               # API密钥（可选，会覆盖全局密钥）
 base_url = "https://api.xxx.com" # 自定义API地址（可选）
+support_vision = true            # 是否支持视觉,可否使用图片
 
 # 模型参数（可选）
 temperature = 0.7                # 温度参数
@@ -137,7 +138,6 @@ price_per_mil_token = 0.0        # 每百万token价格（用于成本统计）
 rate_limit_interval = 0        # 请求间隔限制（秒），防止API限流
 think = false                    # 是否启用思考模式
 prefill = false                  # 是否启用预填充
-reasoning_tag = ""               # 推理标签
 ```
 
 ### 配置示例
