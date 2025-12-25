@@ -29,22 +29,22 @@ type Config struct {
 }
 
 type ModelConfig struct {
-	Identifier       string  `toml:"identifier,omitempty"`
-	Provider         string  `toml:"provider,omitempty"`
-	ApiKey           string  `toml:"api_key,omitempty"`
-	ModelName        string  `toml:"model_name,omitempty"`
-	BaseUrl          string  `toml:"base_url,omitempty"`
-	PricePerMilToken float64 `toml:"price_per_mil_token,omitempty"`
-	ContextWindow    int     `toml:"context_window,omitempty"`
-	Temperature      float64 `toml:"temperature,omitempty"`
-	TopP             float64 `toml:"top_p,omitempty"`
-	FrequencyPenalty float64 `toml:"frequency_penalty,omitempty"`
-	PresencePenalty  float64 `toml:"presence_penalty,omitempty"`
-	MaxTokens        int     `toml:"max_tokens,omitempty"`
-	ReasoningTag     string  `toml:"reasoning_tag,omitempty"`
-	Prefill          bool    `toml:"prefill,omitempty"`
-	Think            bool    `toml:"think,omitempty"`
-	RateLimitInterval float64 `toml:"rate_limit_interval,omitempty"` // 限流间隔（秒）
+	Identifier        string  `toml:"identifier,omitempty"`
+	Provider          string  `toml:"provider,omitempty"`
+	ApiKey            string  `toml:"api_key,omitempty"`
+	ModelName         string  `toml:"model_name,omitempty"`
+	BaseUrl           string  `toml:"base_url,omitempty"`
+	PricePerMilToken  float64 `toml:"price_per_mil_token,omitempty"`
+	ContextWindow     int     `toml:"context_window,omitempty"`
+	Temperature       float64 `toml:"temperature,omitempty"`
+	TopP              float64 `toml:"top_p,omitempty"`
+	FrequencyPenalty  float64 `toml:"frequency_penalty,omitempty"`
+	PresencePenalty   float64 `toml:"presence_penalty,omitempty"`
+	MaxTokens         int     `toml:"max_tokens,omitempty"`
+	ReasoningTag      string  `toml:"reasoning_tag,omitempty"`
+	Prefill           bool    `toml:"prefill,omitempty"`
+	Think             bool    `toml:"think,omitempty"`
+	RateLimitInterval int     `toml:"rate_limit_interval,omitempty"` // 限流间隔（秒）
 }
 
 func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {

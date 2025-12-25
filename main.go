@@ -84,7 +84,6 @@ func checkAndRecoverSession() string {
 
 	lastSession := sessionList[len(sessionList)-1]
 	pterm.Info.Println(locales.Sprintf("Last session: %s", lastSession.SessionId))
-	pterm.Info.Println(locales.Sprintf("Last query: %s", lastSession.Query))
 
 	// 询问用户是否恢复
 	recover, err := pterm.DefaultInteractiveConfirm.Show(locales.Sprintf("Recover last session and revert to last checkpoint?"))
