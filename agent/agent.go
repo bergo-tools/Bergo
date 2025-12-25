@@ -163,6 +163,9 @@ func (a *Agent) doTask(ctx context.Context) {
 	toolCallAnswers := []*tools.AgentOutput{}
 	keepGoing := true
 	signalChan := make(chan os.Signal, 1)
+	// 记录 memento 文件的初始哈希，用于后续检测是否有改动
+	mementoInitialHash := utils.GetMementoHash()
+	mementoReminded := false // 标记是否已经提醒过，避免重复提醒
 	defer func() {
 		if !isChanClose(signalChan) {
 			close(signalChan)
@@ -276,6 +279,15 @@ func (a *Agent) doTask(ctx context.Context) {
 				toolCallAnswers = append(toolCallAnswers, answer)
 			}
 		}
+		if hasStopLoop || len(toolCallAnswers) <= 0 {
+			// 在 agent 模式下，检测 memento 文件是否有改动
+			if a.agentMode == prompt.MODE_AGENT && !mementoReminded && !utils.IsMementoChanged(mementoInitialHash) {
+				mementoReminded = true
+				a.addMementoNotify()
+				keepGoing = true
+				continue
+			}
+		}
 		if hasStopLoop {
 			break
 		}
@@ -286,6 +298,13 @@ func (a *Agent) doTask(ctx context.Context) {
 			}
 		}
 	}
+}
+func (a *Agent) addMementoNotify() {
+	query := utils.Query{}
+	query.SetUserInput("")
+	query.SetMode(a.agentMode)
+	query.SetMementoUpdateRemind()
+	a.timeline.AddUserInput(&query)
 }
 func (a *Agent) getCliInput() berio.BerInput {
 	attachments := make([]string, len(a.attachments))
