@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 )
 
 const (
@@ -131,57 +130,6 @@ type ExtractItem struct {
 
 func (e *ExtractItem) String() string {
 	return fmt.Sprintf("<extract_item>## %s\n%s</extract_item>", e.Target, e.Content)
-}
-
-type SharedExtract struct {
-	sync.Mutex
-	Related     map[string][]*ExtractItem
-	Total       llm.TokenUsage
-	SubTaskInfo string
-}
-
-func (s *SharedExtract) GetSubTaskInfo() string {
-	s.Lock()
-	defer s.Unlock()
-	return s.SubTaskInfo
-}
-func (s *SharedExtract) SetSubTaskInfo(info string) {
-	s.Lock()
-	defer s.Unlock()
-	s.SubTaskInfo = info
-}
-func (s *SharedExtract) GetAll() []*ExtractItem {
-	s.Lock()
-	defer s.Unlock()
-	var res []*ExtractItem
-	if s.Related == nil {
-		s.Related = make(map[string][]*ExtractItem)
-	}
-	for _, items := range s.Related {
-		res = append(res, items...)
-	}
-	return res
-}
-func (s *SharedExtract) UsageUpdate(usage llm.TokenUsage) {
-	s.Lock()
-	defer s.Unlock()
-	s.Total.PromptTokens += usage.PromptTokens
-	s.Total.CompletionTokens += usage.CompletionTokens
-	s.Total.TotalTokens += usage.TotalTokens
-	s.Total.CachedTokens += usage.CachedTokens
-}
-func (s *SharedExtract) GetUsage() llm.TokenUsage {
-	s.Lock()
-	defer s.Unlock()
-	return s.Total
-}
-func (s *SharedExtract) Add(item *ExtractItem) {
-	s.Lock()
-	defer s.Unlock()
-	if s.Related == nil {
-		s.Related = make(map[string][]*ExtractItem)
-	}
-	s.Related[item.Path] = append(s.Related[item.Path], item)
 }
 
 func Berag(ctx context.Context, input *AgentInput) *AgentOutput {

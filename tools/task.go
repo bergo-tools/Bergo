@@ -196,7 +196,9 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 			Role:             "assistant",
 			ToolCalls:        toolCallRequests,
 		})
-
+		t.shared.UsageUpdate(streamer.TokenUsage)
+		// 更新当前 task 的进度信息（记录最新一轮的回复和工具调用）
+		t.shared.UpdateTaskProgress(t.ID, content.String(), toolCallRequests, streamer.TokenUsage)
 		//做tool use
 		stoploop := false
 		var parallelCalls []*llm.ToolCall
@@ -227,7 +229,7 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 
 			}
 		}
-		t.shared.UsageUpdate(streamer.TokenUsage)
+
 		if t.Mode == prompt.MODE_BERAG {
 			t.shared.SetSubTaskInfo(t.parallelCallsText(parallelCalls))
 		}
