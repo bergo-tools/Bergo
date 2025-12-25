@@ -29,18 +29,34 @@ func GetManager() *Manager {
 	return globalManager
 }
 
-// LoadBuiltinSkills 释放内置skills到工作目录
-func (m *Manager) LoadBuiltinSkills(workDir string) error {
-	// 释放内置skills到工作目录的.bergoskills下
-	if err := ExtractBuiltinSkills(workDir); err != nil {
+func (m *Manager) GetSkillsPath() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Errorf("failed to get user home directory: %w", err))
+	}
+	return filepath.Join(homeDir, ".bergoskills")
+}
+
+// LoadBuiltinSkills 释放内置skills到用户主目录
+func (m *Manager) LoadBuiltinSkills() error {
+	// 释放内置skills到用户主目录的.bergoskills下
+	if err := ExtractBuiltinSkills(); err != nil {
 		return fmt.Errorf("failed to extract builtin skills: %w", err)
 	}
 	return nil
 }
 
-// LoadSkills 从指定目录加载所有 skills
-func (m *Manager) LoadSkills(baseDir string) error {
-	skillsPath := filepath.Join(baseDir, SkillsDir)
+// LoadSkills 从用户主目录加载所有 skills
+func (m *Manager) LoadSkills() error {
+	skillsPath, err := GetSkillsPath()
+	if err != nil {
+		return err
+	}
+	return m.loadSkillsFromDir(skillsPath)
+}
+
+// LoadSkillsFromPath 从指定路径加载所有 skills（主要用于测试）
+func (m *Manager) LoadSkillsFromPath(skillsPath string) error {
 	return m.loadSkillsFromDir(skillsPath)
 }
 

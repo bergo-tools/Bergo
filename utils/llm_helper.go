@@ -40,7 +40,7 @@ var globalRateLimitManager = &rateLimitManager{
 }
 
 // applyRateLimit 应用限流，如果需要则等待
-func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval float64) {
+func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval int) {
 	if interval <= 0 {
 		return // 没有限流
 	}
@@ -51,7 +51,7 @@ func (m *rateLimitManager) applyRateLimit(modelIdentifier string, interval float
 	lastAt, exists := m.lastRequestAt[modelIdentifier]
 	if exists {
 		elapsed := time.Since(lastAt)
-		required := time.Duration(interval * float64(time.Second))
+		required := time.Duration(interval * int(time.Second))
 		if elapsed < required {
 			// 需要等待
 			waitTime := required - elapsed

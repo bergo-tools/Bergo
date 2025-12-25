@@ -128,16 +128,12 @@ Instructions here.
 		t.Fatal(err)
 	}
 
-	// 测试加载
-	manager := &skills.Manager{}
-	manager.Clear()
-	
-	// 使用新的 manager 实例
+	// 测试加载 - 使用 LoadSkillsFromPath 直接测试加载逻辑
 	newManager := skills.GetManager()
 	newManager.Clear()
-	
-	if err := newManager.LoadSkills(tmpDir); err != nil {
-		t.Fatalf("LoadSkills failed: %v", err)
+
+	if err := newManager.LoadSkillsFromPath(filepath.Join(tmpDir, ".bergoskills")); err != nil {
+		t.Fatalf("LoadSkillsFromPath failed: %v", err)
 	}
 
 	if newManager.Count() != 1 {

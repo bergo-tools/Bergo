@@ -111,7 +111,6 @@ func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOu
 		query.SetUserInput(filtered)
 		query.SetAttachment(a.attachments)
 		query.SetMode(a.agentMode)
-		query.SetMememtoNotice()
 		a.attachments = nil
 		utils.InitMementoFile(a.sessionId)
 		a.saveCheckPoint()
@@ -163,6 +162,9 @@ func (a *Agent) doTask(ctx context.Context) {
 	toolCallAnswers := []*tools.AgentOutput{}
 	keepGoing := true
 	signalChan := make(chan os.Signal, 1)
+	// 记录 memento 文件的初始哈希，用于后续检测是否有改动
+	mementoInitialHash := utils.GetMementoHash()
+	mementoReminded := false // 标记是否已经提醒过，避免重复提醒
 	defer func() {
 		if !isChanClose(signalChan) {
 			close(signalChan)
@@ -276,6 +278,15 @@ func (a *Agent) doTask(ctx context.Context) {
 				toolCallAnswers = append(toolCallAnswers, answer)
 			}
 		}
+		if hasStopLoop || len(toolCallAnswers) <= 0 {
+			// 在 agent 模式下，检测 memento 文件是否有改动
+			if a.agentMode == prompt.MODE_AGENT && !mementoReminded && !utils.IsMementoChanged(mementoInitialHash) {
+				mementoReminded = true
+				a.addMementoNotify()
+				keepGoing = true
+				continue
+			}
+		}
 		if hasStopLoop {
 			break
 		}
@@ -286,6 +297,13 @@ func (a *Agent) doTask(ctx context.Context) {
 			}
 		}
 	}
+}
+func (a *Agent) addMementoNotify() {
+	query := utils.Query{}
+	query.SetUserInput("")
+	query.SetMode(a.agentMode)
+	query.SetMementoUpdateRemind()
+	a.timeline.AddUserInput(&query)
 }
 func (a *Agent) getCliInput() berio.BerInput {
 	attachments := make([]string, len(a.attachments))
@@ -425,9 +443,15 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 			}
 			index++
 		} else if strings.HasPrefix(match, "@img:") {
+			// 检查当前模型是否支持图片输入
+			modelConf := config.GlobalConfig.GetModelConfig(config.GlobalConfig.MainModel)
+			if modelConf == nil || !modelConf.SupportVision {
+				a.output.OnSystemMsg(locales.Sprintf("current model does not support image input"), berio.MsgTypeWarning)
+				return "", false
+			}
 			path := strings.TrimPrefix(match, "@img:")
-			_, err := os.Stat(path)
-			if err != nil {
+			stats, err := os.Stat(path)
+			if err != nil || stats.IsDir() {
 				a.output.OnSystemMsg(locales.Sprintf("invalid image path: %v", path), berio.MsgTypeWarning)
 				return "", false
 			}

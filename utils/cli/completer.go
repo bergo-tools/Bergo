@@ -63,8 +63,29 @@ var AtCmds = []struct {
 	Gen  func() string
 }{
 	{Text: "@file:", Gen: func() string { return locales.Sprintf("file path of a file or directory") }},
-	{Text: "@img:", Gen: func() string { return locales.Sprintf("file path of an image") }},
 	//{Text: "@web ", Gen: func() string { return locales.Sprintf("use web search") }},
+}
+
+// GetAtCmds 返回当前可用的@命令列表，根据模型配置动态决定
+func GetAtCmds(modelIdentifier string) []struct {
+	Text string
+	Gen  func() string
+} {
+	cmds := make([]struct {
+		Text string
+		Gen  func() string
+	}, len(AtCmds))
+	copy(cmds, AtCmds)
+
+	// 检查当前模型是否支持vision
+	modelConfig := config.GlobalConfig.GetModelConfig(modelIdentifier)
+	if modelConfig != nil && modelConfig.SupportVision {
+		cmds = append(cmds, struct {
+			Text string
+			Gen  func() string
+		}{Text: "@img:", Gen: func() string { return locales.Sprintf("file path of an image") }})
+	}
+	return cmds
 }
 
 func BergoCompleter(input string, cusorPos int) []*CompletionItem {
@@ -80,11 +101,12 @@ func BergoCompleterRaw(inputStr string, cusorPos int) []*CompletionItem {
 		for _, model := range config.GlobalConfig.Models {
 			modelTrie.Put(model.Identifier, 1)
 		}
-		atTrie = utils.NewTrie()
-		for _, cmd := range AtCmds {
-			atTrie.Put(cmd.Text, cmd.Gen)
-		}
 	})
+	// 动态构建atTrie，根据当前模型配置
+	atTrie = utils.NewTrie()
+	for _, cmd := range GetAtCmds(config.GlobalConfig.MainModel) {
+		atTrie.Put(cmd.Text, cmd.Gen)
+	}
 	input := []rune(inputStr)
 	// 过滤匹配的补全项
 	var result []*CompletionItem
@@ -116,6 +138,10 @@ func BergoCompleterRaw(inputStr string, cusorPos int) []*CompletionItem {
 				result = append(result, &CompletionItem{Text: item.Text, Description: item.Description, Completion: completion, AddSapce: true})
 			}
 		} else if strings.HasPrefix(atCmd, "@img:") {
+			modelConfig := config.GlobalConfig.GetModelConfig(config.GlobalConfig.MainModel)
+			if modelConfig == nil || !modelConfig.SupportVision {
+				return result
+			}
 			after := strings.TrimPrefix(atCmd, "@img:")
 			path := after
 			if after == "" {

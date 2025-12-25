@@ -7,19 +7,19 @@ import (
 )
 
 type Query struct {
-	UserInput     string        `json:"user_input"`
-	Mode          string        `json:"mode"`
-	Attachment    []*Attachment `json:"attachment"`
-	IsInterrupted bool          `json:"is_interrupted"`
-	MememtoNotice bool          `json:"mememto_notice"`
-	IsCompact     bool
+	UserInput           string        `json:"user_input"`
+	Mode                string        `json:"mode"`
+	Attachment          []*Attachment `json:"attachment"`
+	IsInterrupted       bool          `json:"is_interrupted"`
+	MementoUpdateRemind bool          `json:"memento_update_remind"`
+	IsCompact           bool
 }
 
 func (q *Query) SetCompact() {
 	q.IsCompact = true
 }
-func (q *Query) SetMememtoNotice() {
-	q.MememtoNotice = true
+func (q *Query) SetMementoUpdateRemind() {
+	q.MementoUpdateRemind = true
 }
 
 func (q *Query) SetAttachment(attachments []*Attachment) {
@@ -75,10 +75,8 @@ func (q *Query) Build() string {
 		}
 		buf.WriteString("</attachments>\n")
 	}
-
-	if q.MememtoNotice {
-		buf.WriteString("<mememto_notice>记得维护mememto file，在开始任务时先写入，之后不断更新它，当然，在Debug模式下不需要维护</mememto_notice>\n")
-		q.MememtoNotice = false
+	if q.MementoUpdateRemind {
+		buf.WriteString("<memento_update_remind>检测到你在上一轮任务中没有更新memento file，请记得及时更新它以保存任务进度和关键信息</memento_update_remind>\n")
 	}
 	return buf.String()
 }

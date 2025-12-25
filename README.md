@@ -78,42 +78,87 @@ bergo your-config.toml
 
 ## ⚙️ 配置文件
 
-项目使用 `bergo.toml` 配置文件，示例：
+项目使用 `bergo.toml` 配置文件，位于工作目录下。首次运行时会自动引导创建。
+
+### 基本配置项
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `debug` | bool | `false` | 是否开启调试模式 |
+| `language` | string | `"chinese"` | 界面语言 |
+| `line_budget` | int | `1000` | 读取文件时的最大行数限制 |
+| `compact_threshold` | float | `0.8` | 上下文压缩阈值（0-1），超过此比例时触发压缩 |
+| `max_session_count` | int | `0` | 最大会话保存数量，0表示不限制 |
+| `http_proxy` | string | - | HTTP代理地址 |
+
+### 模型选择配置
+
+| 配置项 | 说明 |
+|--------|------|
+| `main_model` | 主模型标识符，用于Agent对话 |
+| `berag_model` | berag工具使用的模型（默认同main_model） |
+| `berag_extract_model` | berag提取内容使用的模型（默认同main_model） |
+
+### API 密钥配置
+
+支持以下服务商的快捷密钥配置：
+
+```toml
+deepseek_api_key = "sk-xxx"
+openai_api_key = "sk-xxx"
+minimax_api_key = "xxx"
+kimi_api_key = "xxx"
+xiaomi_api_key = "xxx"
+openrouter_api_key = "sk-xxx"
+```
+
+### 自定义模型配置
+
+通过 `[[models]]` 添加自定义模型：
+
+```toml
+[[models]]
+identifier = "my-model"          # 模型标识符，用于 main_model 等引用
+provider = "openai"              # 服务商: openai/anthropic/deepseek/minimax/kimi/xiaomi/openrouter
+model_name = "gpt-4o"            # 实际模型名称
+api_key = "sk-xxx"               # API密钥（可选，会覆盖全局密钥）
+base_url = "https://api.xxx.com" # 自定义API地址（可选）
+support_vision = true            # 是否支持视觉,可否使用图片
+
+# 模型参数（可选）
+temperature = 0.7                # 温度参数
+top_p = 1.0                      # Top-P采样
+max_tokens = 8192                # 最大输出token数
+context_window = 128000          # 上下文窗口大小（推荐填写）
+
+# 高级配置（可选）
+frequency_penalty = 0.0          # 频率惩罚
+presence_penalty = 0.0           # 存在惩罚
+price_per_mil_token = 0.0        # 每百万token价格（用于成本统计）
+rate_limit_interval = 0        # 请求间隔限制（秒），防止API限流
+think = false                    # 是否启用思考模式
+prefill = false                  # 是否启用预填充
+```
+
+### 配置示例
 
 ```toml
 # 基本配置
 debug = false
 language = "chinese"
 line_budget = 1000
-compact_threshold = 0.8
 
-# 模型配置
+# 使用 deepseek 作为主模型
 main_model = "deepseek-chat"
-berag_model = "deepseek-chat"
-berag_extract_model = "deepseek-chat"
+deepseek_api_key = "sk-your-key"
 
-# API 密钥 (根据使用的提供商配置)
-deepseek_api_key = "your-api-key"
-# minimax_api_key = "your-api-key"
-# kimi_api_key = "your-api-key"
-# openai_api_key = "your-api-key"
-
-#添加模型
+# 添加自定义模型
 [[models]]
-# 标识符，用于在配置中引用
-identifier = "opus" 
-# 模型供应商，用于选择不同的 LLM 提供商
+identifier = "claude"
 provider = "anthropic"
-# 模型ID，用于指定具体的 LLM 模型
-model_name = "claude-opus-4-5"
-# API 密钥，用于访问 LLM 服务
-api_key = ""
-# 基础 URL，用于构建 API 请求路径
-base_url = "https://code.newcli.com/claude/aws"
-temperature = 0.7
-max_tokens = 65535
-# 上下文窗口大小，用于限制模型输入的最大 token 数量,推荐填写
-context_window = 204800
+model_name = "claude-sonnet-4-20250514"
+api_key = "sk-ant-xxx"
+context_window = 200000
 ```
 
 完整配置示例参见 [example_config.toml](./example_config.toml)
@@ -131,7 +176,7 @@ context_window = 204800
 ### 模式切换
 | 命令 | 说明 |
 |------|------|
-| `/ask` | 切换到 ASK 模式 |
+| `/view` | 切换到 VIEW 模式 |
 | `/planner` | 切换到 PLANNER 模式 |
 | `/agent` | 切换到 AGENT 模式 |
 | `/multiline` | 启用多行输入模式 |
@@ -139,7 +184,7 @@ context_window = 204800
 ### 功能命令
 | 命令 | 说明 |
 |------|------|
-| `/timeline` | 查看操作时间线 |
+| `/history` | 查看操作时间线 |
 | `/revert` | 回退到上个存档点 |
 | `/model` | 切换模型 |
 | `/compact` | 压缩上下文 |

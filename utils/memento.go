@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 )
@@ -41,4 +43,20 @@ func HideMementoFile(sessionID string) {
 		panic(err)
 	}
 	os.Remove("./.bergo.memento")
+}
+
+// GetMementoHash 获取当前 memento 文件的 MD5 哈希值
+func GetMementoHash() string {
+	content, err := os.ReadFile("./.bergo.memento")
+	if err != nil {
+		return ""
+	}
+	hash := md5.Sum(content)
+	return hex.EncodeToString(hash[:])
+}
+
+// IsMementoChanged 检查 memento 文件是否有改动
+func IsMementoChanged(initialHash string) bool {
+	currentHash := GetMementoHash()
+	return currentHash != initialHash
 }

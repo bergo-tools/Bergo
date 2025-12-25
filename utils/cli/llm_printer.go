@@ -102,7 +102,7 @@ var style = glamour.WithAutoStyle()
 func NewLLMPrinter() *LLMPrinter {
 	width := pterm.GetTerminalWidth() * 7 / 10
 	render, _ := glamour.NewTermRenderer(
-		style,
+		utils.AutoStyle,
 		glamour.WithWordWrap(width),
 	)
 	model := streamingWindow{

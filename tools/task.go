@@ -4,7 +4,6 @@ import (
 	"bergo/berio"
 	"bergo/config"
 	"bergo/llm"
-	"bergo/locales"
 	"bergo/prompt"
 	"bergo/utils"
 	"bytes"
@@ -23,6 +22,7 @@ func NewTaskID() string {
 }
 
 type Task struct {
+	ToolScope       []string
 	ID              string
 	Context         []*llm.ChatItem
 	Mode            string
@@ -127,24 +127,8 @@ func (t *Task) doToolUse(ctx context.Context, call *llm.ToolCall) (*AgentOutput,
 }
 func (t *Task) initTools() {
 	t.toolHandler = make(map[string]func(ctx context.Context, input *AgentInput) *AgentOutput)
-	if t.Mode == prompt.MODE_BERAG {
-		t.toolHandler[TOOL_BERAG_EXTRACT] = BeragExtract
-		t.toolHandler[TOOL_SHELL_CMD] = ShellCommand
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_STOP_LOOP] = StopLoop
-	}
-	if t.Mode == prompt.MODE_BERAG_EXTRACT {
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_EXTRACT_RESULT] = ExtractResult
-
-	}
-	if t.Mode == prompt.MODE_COMPACT {
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_EDIT_WHOLE] = EditWhole
-		t.toolHandler[TOOL_EDIT_DIFF] = EditDiff
-		t.toolHandler[TOOL_STOP_LOOP] = StopLoop
-	}
-	for toolName := range t.toolHandler {
+	for _, toolName := range t.ToolScope {
+		t.toolHandler[toolName] = ToolFuncMap[toolName]
 		t.toolSchema = append(t.toolSchema, ToolsMap[toolName].Schema)
 	}
 }
@@ -211,7 +195,9 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 			Role:             "assistant",
 			ToolCalls:        toolCallRequests,
 		})
-
+		t.shared.UsageUpdate(streamer.TokenUsage)
+		// 更新当前 task 的进度信息（记录最新一轮的回复和工具调用）
+		t.shared.UpdateTaskProgress(t.ID, content.String(), toolCallRequests, streamer.TokenUsage)
 		//做tool use
 		stoploop := false
 		var parallelCalls []*llm.ToolCall
@@ -242,14 +228,7 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 
 			}
 		}
-		t.shared.UsageUpdate(streamer.TokenUsage)
-		if t.Mode == prompt.MODE_BERAG {
-			t.shared.SetSubTaskInfo(t.parallelCallsText(parallelCalls))
-		}
-		if t.Mode == prompt.MODE_BERAG || t.Mode == prompt.MODE_BERAG_EXTRACT {
-			usage := t.shared.GetUsage()
-			t.output.UpdateTail(utils.InfoMessageStyle(locales.Sprintf("berag running... total usage %v\n%s", usage.String(), t.shared.GetSubTaskInfo())))
-		}
+
 		if stoploop {
 			break
 		}

@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
+	"time"
 )
 
 const (
@@ -24,6 +24,9 @@ const (
 type BeragToolResult struct {
 	Content string `json:"content"`
 }
+
+var BeragToolScope = []string{TOOL_BERAG_EXTRACT, TOOL_READ_FILE, TOOL_STOP_LOOP, TOOL_SHELL_CMD}
+var BeragExtractToolScope = []string{TOOL_READ_FILE, TOOL_EXTRACT_RESULT}
 
 func BeragToolScheme() *llm.ToolSchema {
 	return &llm.ToolSchema{
@@ -130,57 +133,6 @@ func (e *ExtractItem) String() string {
 	return fmt.Sprintf("<extract_item>## %s\n%s</extract_item>", e.Target, e.Content)
 }
 
-type SharedExtract struct {
-	sync.Mutex
-	Related     map[string][]*ExtractItem
-	Total       llm.TokenUsage
-	SubTaskInfo string
-}
-
-func (s *SharedExtract) GetSubTaskInfo() string {
-	s.Lock()
-	defer s.Unlock()
-	return s.SubTaskInfo
-}
-func (s *SharedExtract) SetSubTaskInfo(info string) {
-	s.Lock()
-	defer s.Unlock()
-	s.SubTaskInfo = info
-}
-func (s *SharedExtract) GetAll() []*ExtractItem {
-	s.Lock()
-	defer s.Unlock()
-	var res []*ExtractItem
-	if s.Related == nil {
-		s.Related = make(map[string][]*ExtractItem)
-	}
-	for _, items := range s.Related {
-		res = append(res, items...)
-	}
-	return res
-}
-func (s *SharedExtract) UsageUpdate(usage llm.TokenUsage) {
-	s.Lock()
-	defer s.Unlock()
-	s.Total.PromptTokens += usage.PromptTokens
-	s.Total.CompletionTokens += usage.CompletionTokens
-	s.Total.TotalTokens += usage.TotalTokens
-	s.Total.CachedTokens += usage.CachedTokens
-}
-func (s *SharedExtract) GetUsage() llm.TokenUsage {
-	s.Lock()
-	defer s.Unlock()
-	return s.Total
-}
-func (s *SharedExtract) Add(item *ExtractItem) {
-	s.Lock()
-	defer s.Unlock()
-	if s.Related == nil {
-		s.Related = make(map[string][]*ExtractItem)
-	}
-	s.Related[item.Path] = append(s.Related[item.Path], item)
-}
-
 func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 	chats := input.TaskChats
 	RemoveLastAssistantChatToolCall(chats)
@@ -193,23 +145,44 @@ func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 		Role:    "user",
 		Message: q.Build(),
 	})
+	shared := &SharedExtract{}
+	id := NewTaskID()
 	task := &Task{
-		ID:              NewTaskID(),
+		ID:              id,
 		Context:         chats,
+		ToolScope:       BeragToolScope,
 		Mode:            prompt.MODE_BERAG,
 		ParallelToolUse: true,
-		shared:          &SharedExtract{},
+		shared:          shared,
 		Model:           config.GlobalConfig.BeragModel,
 		output:          input.Output,
 	}
+
+	// 启动定时器，每隔1秒展示进度
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				progress := beragTaskProgressInfo(shared, id)
+				input.Output.UpdateTail(utils.InfoMessageStyle(progress))
+			}
+		}
+	}()
+
 	answer := task.Run(ctx, input)
+	close(done)
 	if answer.Error != nil {
 		answer.InterruptErr = answer.Error
 		return answer
 	}
 
-	list := task.shared.GetAll()
-	usage := task.shared.GetUsage()
+	list := shared.GetAll()
+	usage := shared.GetUsage()
 	input.Output.OnSystemMsg(fmt.Sprintf("berag found %d items\ntoken usage: %v", len(list), usage.String()), berio.MsgTypeText)
 
 	buff := bytes.NewBufferString(utils.NewTagContent(answer.Content, "summary").WholeContent)
@@ -239,6 +212,7 @@ func BeragExtract(ctx context.Context, input *AgentInput) *AgentOutput {
 	task := &Task{
 		ID:              NewTaskID(),
 		Context:         chats,
+		ToolScope:       BeragExtractToolScope,
 		Mode:            prompt.MODE_BERAG_EXTRACT,
 		ParallelToolUse: false,
 		shared:          input.TasKShared,
@@ -303,6 +277,20 @@ func BeragExtract(ctx context.Context, input *AgentInput) *AgentOutput {
 
 func ExtractResult(ctx context.Context, input *AgentInput) *AgentOutput {
 	return &AgentOutput{ToolCall: input.ToolCall}
+}
+
+func beragTaskProgressInfo(shared *SharedExtract, id string) string {
+	progress := shared.GetTaskProgress(id)
+	usage := shared.GetUsage()
+	buf := bytes.NewBufferString(locales.Sprintf("berag running... total usage %v", usage.String()))
+	if progress == nil {
+		return buf.String()
+	}
+	for idx, toolCall := range progress.ToolCalls {
+		intent := ToolsMap[toolCall].Intent
+		buf.WriteString(fmt.Sprintf("\nSubTask[%d] %s", idx+1, intent))
+	}
+	return buf.String()
 }
 
 var BeragToolDesc = &ToolDesc{

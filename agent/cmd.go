@@ -61,7 +61,7 @@ func (a *Agent) helpCmd(input string) (string, bool) {
 	return "", true
 }
 func (a *Agent) viewCmd(input string) (string, bool) {
-	left := strings.TrimPrefix(input, "/ask")
+	left := strings.TrimPrefix(input, "/view")
 	input = strings.TrimSpace(left)
 	a.agentMode = prompt.MODE_VIEW
 	a.output.OnSystemMsg(locales.Sprintf("Switch to VIEW mode"), berio.MsgTypeText)

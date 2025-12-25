@@ -27,6 +27,15 @@ type Skill struct {
 // SkillsDir 是 skills 目录名
 const SkillsDir = ".bergoskills"
 
+// GetSkillsPath 获取用户主目录下的 skills 路径
+func GetSkillsPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user home directory: %w", err)
+	}
+	return filepath.Join(homeDir, SkillsDir), nil
+}
+
 // nameRegex 用于验证 skill name
 var nameRegex = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
