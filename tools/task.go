@@ -4,7 +4,6 @@ import (
 	"bergo/berio"
 	"bergo/config"
 	"bergo/llm"
-	"bergo/locales"
 	"bergo/prompt"
 	"bergo/utils"
 	"bytes"
@@ -230,13 +229,6 @@ func (t *Task) Run(ctx context.Context, input *AgentInput) *AgentOutput {
 			}
 		}
 
-		if t.Mode == prompt.MODE_BERAG {
-			t.shared.SetSubTaskInfo(t.parallelCallsText(parallelCalls))
-		}
-		if t.Mode == prompt.MODE_BERAG || t.Mode == prompt.MODE_BERAG_EXTRACT {
-			usage := t.shared.GetUsage()
-			t.output.UpdateTail(utils.InfoMessageStyle(locales.Sprintf("berag running... total usage %v\n%s", usage.String(), t.shared.GetSubTaskInfo())))
-		}
 		if stoploop {
 			break
 		}

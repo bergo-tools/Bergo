@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
 
 const (
@@ -144,24 +145,45 @@ func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 		Role:    "user",
 		Message: q.Build(),
 	})
+	shared := &SharedExtract{}
+	id := NewTaskID()
 	task := &Task{
-		ID:              NewTaskID(),
+		ID:              id,
 		Context:         chats,
 		ToolScope:       BeragToolScope,
 		Mode:            prompt.MODE_BERAG,
 		ParallelToolUse: true,
-		shared:          &SharedExtract{},
+		shared:          shared,
 		Model:           config.GlobalConfig.BeragModel,
 		output:          input.Output,
 	}
+
+	// 启动定时器，每隔1秒展示进度
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				progress := beragTaskProgressInfo(shared, id)
+				input.Output.UpdateTail(utils.InfoMessageStyle(progress))
+			}
+		}
+	}()
+
 	answer := task.Run(ctx, input)
+	close(done)
+
 	if answer.Error != nil {
 		answer.InterruptErr = answer.Error
 		return answer
 	}
 
-	list := task.shared.GetAll()
-	usage := task.shared.GetUsage()
+	list := shared.GetAll()
+	usage := shared.GetUsage()
 	input.Output.OnSystemMsg(fmt.Sprintf("berag found %d items\ntoken usage: %v", len(list), usage.String()), berio.MsgTypeText)
 
 	buff := bytes.NewBufferString(utils.NewTagContent(answer.Content, "summary").WholeContent)
@@ -256,6 +278,17 @@ func BeragExtract(ctx context.Context, input *AgentInput) *AgentOutput {
 
 func ExtractResult(ctx context.Context, input *AgentInput) *AgentOutput {
 	return &AgentOutput{ToolCall: input.ToolCall}
+}
+
+func beragTaskProgressInfo(shared *SharedExtract, id string) string {
+	progress := shared.GetTaskProgress(id)
+	usage := shared.GetUsage()
+	buf := bytes.NewBufferString(locales.Sprintf("berag running... total usage %v", usage.String()))
+	for idx, toolCall := range progress.ToolCalls {
+		intent := ToolsMap[toolCall].Intent
+		buf.WriteString(fmt.Sprintf("\nSubTask[%d] %s", idx+1, intent))
+	}
+	return buf.String()
 }
 
 var BeragToolDesc = &ToolDesc{

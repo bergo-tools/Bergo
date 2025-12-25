@@ -126,19 +126,7 @@ type SharedExtract struct {
 	sync.Mutex
 	Related      map[string][]*ExtractItem
 	Total        llm.TokenUsage
-	SubTaskInfo  string
 	TaskProgress map[string]*TaskProgress // 每个 task 的进度信息
-}
-
-func (s *SharedExtract) GetSubTaskInfo() string {
-	s.Lock()
-	defer s.Unlock()
-	return s.SubTaskInfo
-}
-func (s *SharedExtract) SetSubTaskInfo(info string) {
-	s.Lock()
-	defer s.Unlock()
-	s.SubTaskInfo = info
 }
 
 // UpdateTaskProgress 更新指定 task 的进度信息（只保留最新一轮）
