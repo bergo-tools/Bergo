@@ -278,7 +278,7 @@ func (a *Agent) doTask(ctx context.Context) {
 				toolCallAnswers = append(toolCallAnswers, answer)
 			}
 		}
-		if hasStopLoop || len(toolCallRequests) <= 0 {
+		if hasStopLoop || len(toolCallAnswers) <= 0 {
 			// 在 agent 模式下，检测 memento 文件是否有改动
 			if a.agentMode == prompt.MODE_AGENT && !mementoReminded && !utils.IsMementoChanged(mementoInitialHash) {
 				mementoReminded = true

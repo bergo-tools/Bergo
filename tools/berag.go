@@ -176,7 +176,6 @@ func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 
 	answer := task.Run(ctx, input)
 	close(done)
-
 	if answer.Error != nil {
 		answer.InterruptErr = answer.Error
 		return answer
@@ -284,6 +283,9 @@ func beragTaskProgressInfo(shared *SharedExtract, id string) string {
 	progress := shared.GetTaskProgress(id)
 	usage := shared.GetUsage()
 	buf := bytes.NewBufferString(locales.Sprintf("berag running... total usage %v", usage.String()))
+	if progress == nil {
+		return buf.String()
+	}
 	for idx, toolCall := range progress.ToolCalls {
 		intent := ToolsMap[toolCall].Intent
 		buf.WriteString(fmt.Sprintf("\nSubTask[%d] %s", idx+1, intent))

@@ -77,7 +77,6 @@ func (q *Query) Build() string {
 	}
 	if q.MementoUpdateRemind {
 		buf.WriteString("<memento_update_remind>检测到你在上一轮任务中没有更新memento file，请记得及时更新它以保存任务进度和关键信息</memento_update_remind>\n")
-		q.MementoUpdateRemind = false
 	}
 	return buf.String()
 }
