@@ -2,7 +2,12 @@ package utils
 
 import (
 	"bergo/locales"
+	"encoding/json"
+	"reflect"
+	"unsafe"
 
+	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pterm/pterm"
 )
@@ -65,4 +70,16 @@ func LLMInputStyle(message string) string {
 	color := lipgloss.AdaptiveColor{Dark: "#27F5F2", Light: "#079C99"}
 	mainText := lipgloss.NewStyle().Width(width).Foreground(color).Bold(true).Render(message)
 	return lipgloss.NewStyle().Border(lipgloss.ThickBorder()).BorderForeground(color).BorderLeft(true).BorderTop(false).BorderRight(false).BorderBottom(false).Padding(0, 1).Render(mainText) + "\n"
+}
+
+var AutoStyle glamour.TermRendererOption
+
+func init() {
+	trFunc := glamour.WithAutoStyle()
+	tr, _ := glamour.NewTermRenderer()
+	trFunc(tr)
+	val := reflect.ValueOf(tr).Elem().FieldByName("ansiOptions")
+	stylePtt := (*ansi.Options)(unsafe.Pointer(val.UnsafeAddr()))
+	b, _ := json.Marshal(stylePtt.Styles)
+	AutoStyle = glamour.WithStylesFromJSONBytes(b)
 }

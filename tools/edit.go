@@ -164,7 +164,6 @@ func EditWhole(ctx context.Context, input *AgentInput) *AgentOutput {
 	}
 }
 
-var style = glamour.WithAutoStyle()
 var fileTpl = `~~~%s
 
 %s
@@ -177,7 +176,7 @@ var EditDiffToolDesc = &ToolDesc{
 	OutputFunc: func(call *llm.ToolCall, content string) string {
 		stub := EditDiffToolResult{}
 		json.Unmarshal([]byte(call.Function.Arguments), &stub)
-		render, _ := glamour.NewTermRenderer(style, glamour.WithWordWrap(pterm.GetTerminalWidth()*4/10-2))
+		render, _ := glamour.NewTermRenderer(utils.AutoStyle, glamour.WithWordWrap(pterm.GetTerminalWidth()*4/10-2))
 		path := stub.Path
 		searchContent := stub.Search
 		replaceContent := stub.Replace
@@ -198,7 +197,7 @@ var EditWholeToolDesc = &ToolDesc{
 	OutputFunc: func(call *llm.ToolCall, content string) string {
 		stub := EditWholeToolResult{}
 		json.Unmarshal([]byte(call.Function.Arguments), &stub)
-		render, _ := glamour.NewTermRenderer(style, glamour.WithWordWrap(pterm.GetTerminalWidth()*4/10-2))
+		render, _ := glamour.NewTermRenderer(utils.AutoStyle, glamour.WithWordWrap(pterm.GetTerminalWidth()*4/10-2))
 		path := stub.Path
 		replaceContent := stub.Replace
 
