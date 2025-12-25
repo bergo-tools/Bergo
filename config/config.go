@@ -45,6 +45,7 @@ type ModelConfig struct {
 	Prefill           bool    `toml:"prefill,omitempty"`
 	Think             bool    `toml:"think,omitempty"`
 	RateLimitInterval int     `toml:"rate_limit_interval,omitempty"` // 限流间隔（秒）
+	SupportVision     bool    `toml:"support_vision,omitempty"`      // 是否支持图片输入
 }
 
 func (c *ModelConfig) ConfigMerge(userDefine *ModelConfig) {

@@ -443,6 +443,12 @@ func (a *Agent) processAtCommand(userInput string) (string, bool) {
 			}
 			index++
 		} else if strings.HasPrefix(match, "@img:") {
+			// 检查当前模型是否支持图片输入
+			modelConf := config.GlobalConfig.GetModelConfig(config.GlobalConfig.MainModel)
+			if modelConf == nil || !modelConf.SupportVision {
+				a.output.OnSystemMsg(locales.Sprintf("current model does not support image input"), berio.MsgTypeWarning)
+				return "", false
+			}
 			path := strings.TrimPrefix(match, "@img:")
 			_, err := os.Stat(path)
 			if err != nil {
