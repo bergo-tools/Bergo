@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"bergo/version"
 
@@ -112,12 +111,11 @@ func checkAndRecoverSession() string {
 	return lastSession.SessionId
 }
 func loadSkills() {
-	workspace, _ := filepath.Abs(".")
 	manager := skills.GetManager()
-	// 先释放内置skills到工作目录
-	_ = manager.LoadBuiltinSkills(workspace)
-	// 加载工作目录的所有skills（包括内置和用户自定义的）
-	_ = manager.LoadSkills(workspace)
+	// 先释放内置skills到用户主目录
+	_ = manager.LoadBuiltinSkills()
+	// 从用户主目录加载所有skills（包括内置和用户自定义的）
+	_ = manager.LoadSkills()
 }
 
 func main() {

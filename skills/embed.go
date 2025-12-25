@@ -11,9 +11,12 @@ import (
 //go:embed builtin/*
 var builtinSkills embed.FS
 
-// ExtractBuiltinSkills 将内置skills释放到当前工作目录的.bergoskills下
-func ExtractBuiltinSkills(workDir string) error {
-	targetDir := filepath.Join(workDir, SkillsDir)
+// ExtractBuiltinSkills 将内置skills释放到用户主目录的.bergoskills下
+func ExtractBuiltinSkills() error {
+	targetDir, err := GetSkillsPath()
+	if err != nil {
+		return err
+	}
 
 	// 创建目标目录
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
