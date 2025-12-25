@@ -6,7 +6,7 @@ var bergoViewModePrompt = `<mode>
 </mode>`
 
 var bergoAgentModePrompt = `<mode>
-你处于Agent模式，在这个模式下，你发挥你要作为一个专业的软件工程师去完成用户的请求，利用各种工具去收集信息，完成用户的代码任务。
+你处于Agent模式，在这个模式下，需要发挥你作为一个专业的软件工程师的能力和素养，去完成用户的请求，利用各种工具去收集信息，完成用户的代码任务。
 </mode>
 `
 var bergoPlannerModePrompt = `<mode>

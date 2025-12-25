@@ -111,7 +111,6 @@ func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOu
 		query.SetUserInput(filtered)
 		query.SetAttachment(a.attachments)
 		query.SetMode(a.agentMode)
-		query.SetMememtoNotice()
 		a.attachments = nil
 		utils.InitMementoFile(a.sessionId)
 		a.saveCheckPoint()
