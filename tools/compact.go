@@ -13,6 +13,8 @@ const (
 	TOOL_COMPACT = "compact"
 )
 
+var CompactToolScope = []string{TOOL_EDIT_WHOLE, TOOL_EDIT_DIFF, TOOL_STOP_LOOP, TOOL_READ_FILE}
+
 func Compact(ctx context.Context, input *AgentInput) *AgentOutput {
 	chats := input.TaskChats
 	RemoveLastAssistantChatToolCall(chats)
@@ -23,6 +25,7 @@ func Compact(ctx context.Context, input *AgentInput) *AgentOutput {
 		Message: q.Build(),
 	})
 	task := &Task{
+		ToolScope:       CompactToolScope,
 		ID:              NewTaskID(),
 		Context:         chats,
 		Mode:            prompt.MODE_COMPACT,

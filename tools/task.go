@@ -23,6 +23,7 @@ func NewTaskID() string {
 }
 
 type Task struct {
+	ToolScope       []string
 	ID              string
 	Context         []*llm.ChatItem
 	Mode            string
@@ -127,24 +128,8 @@ func (t *Task) doToolUse(ctx context.Context, call *llm.ToolCall) (*AgentOutput,
 }
 func (t *Task) initTools() {
 	t.toolHandler = make(map[string]func(ctx context.Context, input *AgentInput) *AgentOutput)
-	if t.Mode == prompt.MODE_BERAG {
-		t.toolHandler[TOOL_BERAG_EXTRACT] = BeragExtract
-		t.toolHandler[TOOL_SHELL_CMD] = ShellCommand
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_STOP_LOOP] = StopLoop
-	}
-	if t.Mode == prompt.MODE_BERAG_EXTRACT {
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_EXTRACT_RESULT] = ExtractResult
-
-	}
-	if t.Mode == prompt.MODE_COMPACT {
-		t.toolHandler[TOOL_READ_FILE] = ReadFile
-		t.toolHandler[TOOL_EDIT_WHOLE] = EditWhole
-		t.toolHandler[TOOL_EDIT_DIFF] = EditDiff
-		t.toolHandler[TOOL_STOP_LOOP] = StopLoop
-	}
-	for toolName := range t.toolHandler {
+	for _, toolName := range t.ToolScope {
+		t.toolHandler[toolName] = ToolFuncMap[toolName]
 		t.toolSchema = append(t.toolSchema, ToolsMap[toolName].Schema)
 	}
 }

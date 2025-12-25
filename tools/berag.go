@@ -25,6 +25,9 @@ type BeragToolResult struct {
 	Content string `json:"content"`
 }
 
+var BeragToolScope = []string{TOOL_BERAG_EXTRACT, TOOL_READ_FILE, TOOL_STOP_LOOP, TOOL_SHELL_CMD}
+var BeragExtractToolScope = []string{TOOL_READ_FILE, TOOL_EXTRACT_RESULT}
+
 func BeragToolScheme() *llm.ToolSchema {
 	return &llm.ToolSchema{
 		Type: "function",
@@ -196,6 +199,7 @@ func Berag(ctx context.Context, input *AgentInput) *AgentOutput {
 	task := &Task{
 		ID:              NewTaskID(),
 		Context:         chats,
+		ToolScope:       BeragToolScope,
 		Mode:            prompt.MODE_BERAG,
 		ParallelToolUse: true,
 		shared:          &SharedExtract{},
@@ -239,6 +243,7 @@ func BeragExtract(ctx context.Context, input *AgentInput) *AgentOutput {
 	task := &Task{
 		ID:              NewTaskID(),
 		Context:         chats,
+		ToolScope:       BeragExtractToolScope,
 		Mode:            prompt.MODE_BERAG_EXTRACT,
 		ParallelToolUse: false,
 		shared:          input.TasKShared,

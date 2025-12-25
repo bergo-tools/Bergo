@@ -58,6 +58,8 @@ var ToolsMap = map[string]*ToolDesc{
 	TOOL_EXTRACT_RESULT: ExtractResultToolDesc,
 }
 
+var ToolFuncMap = map[string]func(ctx context.Context, input *AgentInput) *AgentOutput{}
+
 func init() {
 	for _, tool := range ToolsMap {
 		if tool.Schema != nil {
@@ -73,6 +75,16 @@ func init() {
 			tool.Validator = validator
 		}
 	}
+	ToolFuncMap = make(map[string]func(ctx context.Context, input *AgentInput) *AgentOutput)
+	ToolFuncMap[TOOL_EDIT_DIFF] = EditDiff
+	ToolFuncMap[TOOL_EDIT_WHOLE] = EditWhole
+	ToolFuncMap[TOOL_REMOVE] = Remove
+	ToolFuncMap[TOOL_SHELL_CMD] = ShellCommand
+	ToolFuncMap[TOOL_STOP_LOOP] = StopLoop
+	ToolFuncMap[TOOL_READ_FILE] = ReadFile
+	ToolFuncMap[TOOL_BERAG] = Berag
+	ToolFuncMap[TOOL_BERAG_EXTRACT] = BeragExtract
+	ToolFuncMap[TOOL_EXTRACT_RESULT] = ExtractResult
 }
 
 func JsonSchemaExam(toolCall *llm.ToolCall) error {
