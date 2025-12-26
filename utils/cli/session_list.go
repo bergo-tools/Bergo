@@ -10,11 +10,14 @@ import (
 )
 
 type SessionItem interface {
+	Id() string          // session的唯一标识
 	Title() string       // 在list页面显示
 	Description() string // 在list页面显示
 }
 
-type SessionList struct{}
+type SessionList struct {
+	CurrentSessionId string
+}
 
 type sessionItem struct {
 	title       string
@@ -33,13 +36,14 @@ type sessionListModel struct {
 	showEnterConfirm     bool
 	showDeleteAllConfirm bool
 	originalItems        []SessionItem
+	currentSessionId     string
 }
 
 type sessionListMsg struct{ item SessionItem }
 type deleteConfirmMsg struct{ confirmed bool }
 type enterConfirmMsg struct{ confirmed bool }
 
-func newSessionListModel(items []SessionItem) sessionListModel {
+func newSessionListModel(items []SessionItem, currentSessionId string) sessionListModel {
 	// 倒序处理 items，方便查看最新的 session
 	reversedItems := make([]SessionItem, len(items))
 	for i, item := range items {
@@ -49,8 +53,13 @@ func newSessionListModel(items []SessionItem) sessionListModel {
 
 	var listItems []list.Item
 	for _, item := range items {
+		title := item.Title()
+		// 对当前 session 添加视觉标记
+		if item.Id() == currentSessionId {
+			title = "★ " + title + " " + locales.Sprintf("(current)")
+		}
 		listItems = append(listItems, sessionItem{
-			title:       item.Title(),
+			title:       title,
 			description: item.Description(),
 		})
 	}
@@ -67,9 +76,10 @@ func newSessionListModel(items []SessionItem) sessionListModel {
 		Bold(true)
 
 	return sessionListModel{
-		list:          l,
-		items:         items,
-		originalItems: append([]SessionItem{}, items...),
+		list:             l,
+		items:            items,
+		originalItems:    append([]SessionItem{}, items...),
+		currentSessionId: currentSessionId,
 	}
 }
 
@@ -130,11 +140,25 @@ func (m sessionListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.list.FilterState() == list.Filtering {
 				break
 			}
+			// 检查是否是当前 session，当前 session 不能加载
+			if len(m.items) > 0 {
+				selectedIndex := m.list.Index()
+				if selectedIndex < len(m.items) && m.items[selectedIndex].Id() == m.currentSessionId {
+					return m, nil
+				}
+			}
 			m.showEnterConfirm = true
 			return m, nil
 		case tea.KeyDelete, tea.KeyBackspace:
 			if m.list.FilterState() == list.Filtering {
 				break
+			}
+			// 检查是否是当前 session，当前 session 不能删除
+			if len(m.items) > 0 {
+				selectedIndex := m.list.Index()
+				if selectedIndex < len(m.items) && m.items[selectedIndex].Id() == m.currentSessionId {
+					return m, nil
+				}
 			}
 			m.showDeleteConfirm = true
 			return m, nil
@@ -245,7 +269,7 @@ func (m *sessionListModel) selectCurrentItem() sessionListModel {
 }
 
 func (s *SessionList) Show(items []SessionItem) (SessionItem, []SessionItem, error) {
-	model := newSessionListModel(items)
+	model := newSessionListModel(items, s.CurrentSessionId)
 
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	finalModel, err := p.Run()

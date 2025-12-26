@@ -199,6 +199,10 @@ type SessionListItem struct {
 	Ts        int64
 }
 
+func (h *SessionListItem) Id() string {
+	return h.SessionId
+}
+
 func (h *SessionListItem) Title() string {
 	return fmt.Sprintf("Session: %v %v", h.SessionId, time.Unix(h.Ts, 0).Format("2006-01-02 15:04:05"))
 }
