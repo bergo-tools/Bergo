@@ -126,8 +126,8 @@ func main() {
 	}
 	fmt.Println(bergoTitle)
 	// 显示完整的版本信息
-	versionInfo := version.FormatVersion(version.Version, version.BuildTime, version.CommitHash)
-	pterm.Info.Println(fmt.Sprintf("Version %s", versionInfo))
+
+	pterm.Info.Println(fmt.Sprintf("Version %s", version.FormatVersion(version.Version, version.BuildTime, version.CommitHash)))
 	fmt.Println("\n")
 	// 加载 skills
 	loadSkills()
