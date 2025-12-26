@@ -41,11 +41,12 @@ type AgentIf interface {
 }
 
 type ToolDesc struct {
-	Name       string
-	Intent     string
-	OutputFunc func(*llm.ToolCall, string) string
-	Schema     *llm.ToolSchema
-	Validator  *jsonschema.Schema
+	Name          string
+	Intent        string
+	OutputFunc    func(*llm.ToolCall, string) string
+	Schema        *llm.ToolSchema
+	Validator     *jsonschema.Schema
+	RequireVision bool // 是否需要视觉能力的模型
 }
 
 var ToolsMap = map[string]*ToolDesc{
@@ -55,6 +56,7 @@ var ToolsMap = map[string]*ToolDesc{
 	TOOL_SHELL_CMD:      ShellCmdToolDesc,
 	TOOL_STOP_LOOP:      StopLoopToolDesc,
 	TOOL_READ_FILE:      ReadFileToolDesc,
+	TOOL_READ_IMG:       ReadImgToolDesc,
 	TOOL_BERAG:          BeragToolDesc,
 	TOOL_BERAG_EXTRACT:  BeragExtractToolDesc,
 	TOOL_EXTRACT_RESULT: ExtractResultToolDesc,

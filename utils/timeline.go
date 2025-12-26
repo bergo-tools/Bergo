@@ -120,7 +120,6 @@ func (t *Timeline) AddUserInput(input *Query) {
 		GitHash: "",
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 func (t *Timeline) ReplaceLastUserInput(input *Query) {
@@ -134,7 +133,6 @@ func (t *Timeline) ReplaceLastUserInput(input *Query) {
 			return
 		}
 	}
-	t.Store()
 }
 
 type ToolCallResult struct {
@@ -160,7 +158,6 @@ func (t *Timeline) AddToolCallResult(toolId string, toolName string, content str
 		GitHash: "",
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 // CheckpointData 用于存储checkpoint的数据
@@ -228,7 +225,6 @@ func (t *Timeline) GetLastCheckpointTokenUsage(isReload bool) llm.TokenUsage {
 // UpdateTokenUsage 更新最新的token用量并持久化
 func (t *Timeline) UpdateTokenUsage(tokenUsage llm.TokenUsage) {
 	t.LatestTokenUsage = tokenUsage
-	t.Store()
 }
 
 type LLMResponseItem struct {
@@ -249,7 +245,6 @@ func (t *Timeline) AddLLMResponse(content string, reasoningContent string, rende
 		Epoch:   t.TaskEpoch,
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 func (t *Timeline) AddCompact() {
@@ -275,7 +270,6 @@ func (t *Timeline) CleanTailToolCalls() {
 	if t.Items[len(t.Items)-1].Type == TL_LLMResponse {
 		t.Items[len(t.Items)-1].Data.(*LLMResponseItem).ToolCalls = nil
 	}
-	t.Store()
 }
 
 func (t *Timeline) GetChatContext(addCoT bool) []*llm.ChatItem {

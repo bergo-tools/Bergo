@@ -31,7 +31,7 @@ type AnthropicContentBlock struct {
 	Text         string                 `json:"text,omitempty"`
 	Thinking     string                 `json:"thinking,omitempty"`
 	Signature    string                 `json:"signature,omitempty"`
-	Content      interface{}            `json:"content,omitempty"` // 可以是 string 或 []AnthropicContentBlock
+	Content      string                 `json:"content,omitempty"`
 	ToolUseID    string                 `json:"tool_use_id,omitempty"`
 	IsError      bool                   `json:"is_error,omitempty"`
 	CacheControl *AnthropicCacheControl `json:"cache_control,omitempty"`
@@ -198,34 +198,23 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 					Type:         "tool_result",
 					ToolUseID:    chatItems[i].ToolCallId,
 					CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
+					Content:      chatItems[i].Message,
 				}
-				// 如果有图片，使用 content 数组格式
+
+				blocks = append(blocks, toolBlock)
 				if chatItems[i].Img != "" {
 					mediaType, base64Data := parseDataURL(chatItems[i].Img)
 					if base64Data != "" {
-						// tool_result 的 content 可以是数组，包含 text 和 image
-						contentBlocks := []AnthropicContentBlock{
-							{
-								Type: "text",
-								Text: chatItems[i].Message,
+						blocks = append(blocks, AnthropicContentBlock{
+							Type: "image",
+							Source: &AnthropicImageSource{
+								Type:      "base64",
+								MediaType: mediaType,
+								Data:      base64Data,
 							},
-							{
-								Type: "image",
-								Source: &AnthropicImageSource{
-									Type:      "base64",
-									MediaType: mediaType,
-									Data:      base64Data,
-								},
-							},
-						}
-						toolBlock.Content = contentBlocks
-					} else {
-						toolBlock.Content = chatItems[i].Message
+						})
 					}
-				} else {
-					toolBlock.Content = chatItems[i].Message
 				}
-				blocks = append(blocks, toolBlock)
 			}
 			i--
 			messages = append(messages, AnthropicMessage{
