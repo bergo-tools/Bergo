@@ -38,28 +38,21 @@ func readConfig() {
 	}
 }
 
-// checkAndCleanSessions 检查session数量，如果超过配置的最大值则提示是否清空
+// checkAndCleanSessions 检查session数量，如果超过配置的最大值则自动清理旧session
 func checkAndCleanSessions() {
 	maxCount := config.GlobalConfig.MaxSessionCount
-	// 如果配置值小于等于0，不进行检查
+	// 如果配置值为0，使用默认值30
 	if maxCount <= 0 {
-		return
+		maxCount = 30
 	}
 
 	sessionList := utils.GetSessionList()
 	if len(sessionList) > maxCount {
-		pterm.Warning.Println(locales.Sprintf("Session count (%d) exceeds the limit (%d)", len(sessionList), maxCount))
-
-		clearAll, err := pterm.DefaultInteractiveConfirm.Show(locales.Sprintf("Clear all sessions?"))
-		if err != nil {
-			pterm.Error.Println(locales.Sprintf("Confirmation failed:"), err)
-			return
-		}
-
-		if clearAll {
-			utils.ClearAllSessions()
-			pterm.Success.Println(locales.Sprintf("All sessions cleared"))
-		}
+		// 保留最新的 maxCount 个 session（列表末尾是最新的）
+		keepList := sessionList[len(sessionList)-maxCount:]
+		removedCount := len(sessionList) - maxCount
+		utils.SetSessionList(keepList)
+		pterm.Info.Println(locales.Sprintf("Cleaned %d old sessions, keeping %d", removedCount, maxCount))
 	}
 }
 
