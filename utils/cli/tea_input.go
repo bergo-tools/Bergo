@@ -4,6 +4,7 @@ import (
 	"bergo/utils"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -18,6 +19,28 @@ type CompletionItem struct {
 	Description string
 	Completion  string
 	AddSapce    bool
+}
+
+// AppendTextMsg 用于外部追加文本到输入框的消息
+type AppendTextMsg struct {
+	Text string
+}
+
+// 全局 Program 引用，用于外部发送消息
+var (
+	currentProgram *tea.Program
+	programMu      sync.Mutex
+)
+
+// AppendToInput 向当前输入框追加文本
+func AppendToInput(text string) {
+	programMu.Lock()
+	p := currentProgram
+	programMu.Unlock()
+
+	if p != nil {
+		p.Send(AppendTextMsg{Text: text})
+	}
 }
 
 type TeaInput struct {
@@ -42,7 +65,19 @@ func (ti *TeaInput) Read() (string, error) {
 	model := initialSingleLineModel()
 	model.header = ti.header
 	p := tea.NewProgram(model)
+
+	// 设置全局 Program 引用
+	programMu.Lock()
+	currentProgram = p
+	programMu.Unlock()
+
 	finalModel, err := p.Run()
+
+	// 清除全局 Program 引用
+	programMu.Lock()
+	currentProgram = nil
+	programMu.Unlock()
+
 	if err != nil {
 		return "", err
 	}
@@ -185,6 +220,15 @@ func (m singleLineModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	keyMsg := false
 	switch msg := msg.(type) {
+	case AppendTextMsg:
+		// 处理外部追加文本的消息
+		currentValue := m.textInput.Value()
+		newValue := currentValue
+		newValue += msg.Text
+		newValue += " "
+		m.textInput.SetValue(newValue)
+		m.textInput.SetCursor(len([]rune(newValue)))
+		return m, nil
 	case tea.KeyMsg:
 		keyMsg = true
 		switch msg.Type {

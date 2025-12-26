@@ -299,6 +299,16 @@ func (a *Agent) getCliInput() berio.BerInput {
 	})
 }
 func (a *Agent) readFromUser() string {
+	// 启动文件监听
+	watcher, err := utils.NewFileWatcher(".", func(filePath string) {
+		// 当检测到包含 @bergo 的文件时，追加到输入框
+		cli.AppendToInput("@file:" + filePath)
+	})
+	if err == nil {
+		watcher.Start()
+		defer watcher.Stop()
+	}
+
 	receiver := a.getCliInput()
 	if a.multiline {
 		a.multiline = false
