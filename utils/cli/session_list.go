@@ -3,6 +3,7 @@ package cli
 import (
 	"bergo/locales"
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,15 +29,30 @@ func (i sessionItem) Title() string       { return i.title }
 func (i sessionItem) Description() string { return i.description }
 func (i sessionItem) FilterValue() string { return i.title }
 
+// 确认类型
+type confirmType int
+
+const (
+	confirmNone      confirmType = iota
+	confirmAction                // 单个 session 的操作选择（加载/删除/取消）
+	confirmDeleteAll             // 删除全部确认
+)
+
+// 操作类型
+const (
+	actionLoad   = 0
+	actionDelete = 1
+	actionCancel = 2
+)
+
 type sessionListModel struct {
-	list                 list.Model
-	items                []SessionItem
-	selectedItem         SessionItem
-	showDeleteConfirm    bool
-	showEnterConfirm     bool
-	showDeleteAllConfirm bool
-	originalItems        []SessionItem
-	currentSessionId     string
+	list             list.Model
+	items            []SessionItem
+	selectedItem     SessionItem
+	confirmType      confirmType // 当前确认类型
+	selectedAction   int         // 当前选中的操作索引 (0=确认, 1=取消)
+	originalItems    []SessionItem
+	currentSessionId string
 }
 
 type sessionListMsg struct{ item SessionItem }
@@ -80,6 +96,8 @@ func newSessionListModel(items []SessionItem, currentSessionId string) sessionLi
 		items:            items,
 		originalItems:    append([]SessionItem{}, items...),
 		currentSessionId: currentSessionId,
+		confirmType:      confirmNone,
+		selectedAction:   0,
 	}
 }
 
@@ -95,72 +113,75 @@ func (m sessionListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		if m.showDeleteConfirm {
+		// 如果在确认模式下
+		if m.confirmType != confirmNone {
 			switch msg.String() {
-			case "y", "Y":
-				return m.deleteCurrentItem(), nil
-			case "n", "N", "esc":
-				m.showDeleteConfirm = false
+			case "left":
+				if m.selectedAction > 0 {
+					m.selectedAction--
+				}
+				return m, nil
+			case "right":
+				maxAction := 1 // confirmDeleteAll 只有确认/取消
+				if m.confirmType == confirmAction {
+					maxAction = 2 // 加载/删除/取消
+				}
+				if m.selectedAction < maxAction {
+					m.selectedAction++
+				}
+				return m, nil
+			case "enter":
+				switch m.confirmType {
+				case confirmAction:
+					switch m.selectedAction {
+					case actionLoad:
+						return m.selectCurrentItem(), tea.Quit
+					case actionDelete:
+						return m.deleteCurrentItem(), nil
+					case actionCancel:
+						m.confirmType = confirmNone
+						m.selectedAction = 0
+					}
+				case confirmDeleteAll:
+					if m.selectedAction == 0 { // 确认
+						return m.deleteAllItems(), tea.Quit
+					} else { // 取消
+						m.confirmType = confirmNone
+						m.selectedAction = 0
+					}
+				}
+				return m, nil
+			case "esc":
+				m.confirmType = confirmNone
+				m.selectedAction = 0
 				return m, nil
 			}
 			return m, nil
 		}
 
-		if m.showEnterConfirm {
-			switch msg.String() {
-			case "y", "Y":
-				return m.selectCurrentItem(), tea.Quit
-			case "n", "N", "esc":
-				m.showEnterConfirm = false
-				return m, nil
-			}
-			return m, nil
-		}
-
-		if m.showDeleteAllConfirm {
-			switch msg.String() {
-			case "y", "Y":
-				return m.deleteAllItems(), tea.Quit
-			case "n", "N", "esc":
-				m.showDeleteAllConfirm = false
-				return m, nil
-			}
-			return m, nil
-		}
-
+		// 列表模式下的按键处理
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		case tea.KeyCtrlD:
 			if len(m.items) > 0 {
-				m.showDeleteAllConfirm = true
+				m.confirmType = confirmDeleteAll
+				m.selectedAction = 0
 			}
 			return m, nil
 		case tea.KeyEnter:
 			if m.list.FilterState() == list.Filtering {
 				break
 			}
-			// 检查是否是当前 session，当前 session 不能加载
+			// 检查是否是当前 session，当前 session 不能操作
 			if len(m.items) > 0 {
 				selectedIndex := m.list.Index()
 				if selectedIndex < len(m.items) && m.items[selectedIndex].Id() == m.currentSessionId {
 					return m, nil
 				}
 			}
-			m.showEnterConfirm = true
-			return m, nil
-		case tea.KeyDelete, tea.KeyBackspace:
-			if m.list.FilterState() == list.Filtering {
-				break
-			}
-			// 检查是否是当前 session，当前 session 不能删除
-			if len(m.items) > 0 {
-				selectedIndex := m.list.Index()
-				if selectedIndex < len(m.items) && m.items[selectedIndex].Id() == m.currentSessionId {
-					return m, nil
-				}
-			}
-			m.showDeleteConfirm = true
+			m.confirmType = confirmAction
+			m.selectedAction = 0
 			return m, nil
 		}
 	}
@@ -174,40 +195,62 @@ func (m sessionListModel) View() string {
 	listView := m.list.View()
 
 	var confirmationView string
-	if m.showDeleteConfirm {
-		confirmationView = lipgloss.NewStyle().
-			Width(m.list.Width()).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("170")).
-			Align(lipgloss.Center).
-			Render(locales.Sprintf(
-				"Delete '%s'? Press 'y' to confirm, 'n' to cancel",
+	if m.confirmType != confirmNone {
+		var promptText string
+		var borderColor string
+		var actions []string
+
+		switch m.confirmType {
+		case confirmAction:
+			promptText = locales.Sprintf(
+				"'%s'",
 				m.list.SelectedItem().(sessionItem).Title(),
-			))
-	} else if m.showEnterConfirm {
-		confirmationView = lipgloss.NewStyle().
-			Width(m.list.Width()).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("170")).
-			Align(lipgloss.Center).
-			Render(locales.Sprintf(
-				"Select '%s'? Press 'y' to confirm, 'n' to cancel",
-				m.list.SelectedItem().(sessionItem).Title(),
-			))
-	} else if m.showDeleteAllConfirm {
-		confirmationView = lipgloss.NewStyle().
-			Width(m.list.Width()).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("196")).
-			Align(lipgloss.Center).
-			Render(locales.Sprintf(
-				"Delete all %d sessions? Press 'y' to confirm, 'n' to cancel",
+			)
+			borderColor = "170"
+			actions = []string{locales.Sprintf("Load"), locales.Sprintf("Delete"), locales.Sprintf("Cancel")}
+		case confirmDeleteAll:
+			promptText = locales.Sprintf(
+				"Delete all %d sessions?",
 				len(m.items),
-			))
+			)
+			borderColor = "196"
+			actions = []string{locales.Sprintf("Confirm"), locales.Sprintf("Cancel")}
+		}
+
+		// 构建操作选择器
+		var actionLine strings.Builder
+		for i, action := range actions {
+			if i > 0 {
+				actionLine.WriteString("    ")
+			}
+			if i == m.selectedAction {
+				// 高亮当前选中的操作
+				selectedStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("170")).
+					Bold(true).
+					Background(lipgloss.Color("236")).
+					PaddingLeft(1).
+					PaddingRight(1)
+				actionLine.WriteString(selectedStyle.Render(fmt.Sprintf("▶ %s ◀", action)))
+			} else {
+				actionStyle := lipgloss.NewStyle().
+					Foreground(lipgloss.Color("241"))
+				actionLine.WriteString(actionStyle.Render(fmt.Sprintf("  %s  ", action)))
+			}
+		}
+
+		confirmationView = lipgloss.NewStyle().
+			Width(m.list.Width()).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(borderColor)).
+			Align(lipgloss.Center).
+			Render(fmt.Sprintf("%s\n%s", promptText, actionLine.String()))
 	}
-	helpFooter := locales.Sprintf("Press 'esc' to exit, 'enter' to confirm, 'delete' to delete, 'ctrl+d' to delete all")
+
+	helpFooter := locales.Sprintf("Press 'esc' to exit, 'enter' to confirm, 'ctrl+d' to delete all")
 	if confirmationView != "" {
-		return lipgloss.JoinVertical(lipgloss.Left, listView, helpFooter, confirmationView)
+		confirmHelpFooter := locales.Sprintf("Use ←/→ to select action, Enter to execute, ESC to cancel")
+		return lipgloss.JoinVertical(lipgloss.Left, listView, helpFooter, confirmationView, confirmHelpFooter)
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, listView, helpFooter)
@@ -236,7 +279,8 @@ func (m *sessionListModel) deleteCurrentItem() sessionListModel {
 	}
 
 	m.list.SetItems(listItems)
-	m.showDeleteConfirm = false
+	m.confirmType = confirmNone
+	m.selectedAction = 0
 
 	// Adjust cursor if needed
 	if selectedIndex >= len(m.items) && len(m.items) > 0 {
@@ -247,9 +291,19 @@ func (m *sessionListModel) deleteCurrentItem() sessionListModel {
 }
 
 func (m *sessionListModel) deleteAllItems() sessionListModel {
-	m.items = []SessionItem{}
-	m.list.SetItems([]list.Item{})
-	m.showDeleteAllConfirm = false
+	// 保留当前 session
+	var remainingItems []SessionItem
+	var listItems []list.Item
+	for _, item := range m.items {
+		if item.Id() == m.currentSessionId {
+			remainingItems = append(remainingItems, item)
+		}
+	}
+
+	m.items = remainingItems
+	m.list.SetItems(listItems)
+	m.confirmType = confirmNone
+	m.selectedAction = 0
 	return *m
 }
 
@@ -264,7 +318,8 @@ func (m *sessionListModel) selectCurrentItem() sessionListModel {
 	}
 
 	m.selectedItem = m.items[selectedIndex]
-	m.showEnterConfirm = false
+	m.confirmType = confirmNone
+	m.selectedAction = 0
 	return *m
 }
 
