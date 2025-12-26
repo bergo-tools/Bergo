@@ -164,7 +164,6 @@ func EditWhole(ctx context.Context, input *AgentInput) *AgentOutput {
 	}
 }
 
-var style = glamour.WithAutoStyle()
 var fileTpl = `~~~%s
 
 %s
