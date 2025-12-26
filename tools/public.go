@@ -29,6 +29,7 @@ type AgentInput struct {
 type AgentOutput struct {
 	ToolCall     *llm.ToolCall
 	Content      string
+	ImgPath      string // 图片文件路径，存储到 timeline 时只保存路径
 	Rendered     string
 	Stats        utils.Stat
 	Error        error //出错，应该返回给llm

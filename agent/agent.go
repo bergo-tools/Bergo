@@ -291,8 +291,8 @@ func (a *Agent) doTask(ctx context.Context) {
 			break
 		}
 		if len(toolCallAnswers) > 0 {
-			for _, answer := range toolCallAnswers {
-				a.timeline.AddToolCallResult(answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content, answer.Rendered)
+		for _, answer := range toolCallAnswers {
+				a.timeline.AddToolCallResult(answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content, answer.ImgPath, answer.Rendered)
 				cli.PrintDebugText("%s\n%s\n%s\n", answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content)
 			}
 		}
