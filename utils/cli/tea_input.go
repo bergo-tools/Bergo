@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"bergo/locales"
 	"bergo/utils"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -19,6 +19,28 @@ type CompletionItem struct {
 	Description string
 	Completion  string
 	AddSapce    bool
+}
+
+// AppendTextMsg 用于外部追加文本到输入框的消息
+type AppendTextMsg struct {
+	Text string
+}
+
+// 全局 Program 引用，用于外部发送消息
+var (
+	currentProgram *tea.Program
+	programMu      sync.Mutex
+)
+
+// AppendToInput 向当前输入框追加文本
+func AppendToInput(text string) {
+	programMu.Lock()
+	p := currentProgram
+	programMu.Unlock()
+
+	if p != nil {
+		p.Send(AppendTextMsg{Text: text})
+	}
 }
 
 type TeaInput struct {
@@ -43,7 +65,19 @@ func (ti *TeaInput) Read() (string, error) {
 	model := initialSingleLineModel()
 	model.header = ti.header
 	p := tea.NewProgram(model)
+
+	// 设置全局 Program 引用
+	programMu.Lock()
+	currentProgram = p
+	programMu.Unlock()
+
 	finalModel, err := p.Run()
+
+	// 清除全局 Program 引用
+	programMu.Lock()
+	currentProgram = nil
+	programMu.Unlock()
+
 	if err != nil {
 		return "", err
 	}
@@ -88,12 +122,31 @@ type singleLineModel struct {
 	stop        bool
 }
 
+// 输入框样式
+var (
+	inputPromptStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.AdaptiveColor{Dark: "#7C3AED", Light: "#5B21B6"}).
+				Bold(true)
+
+	inputBoxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.AdaptiveColor{Dark: "#6366F1", Light: "#4F46E5"}).
+			Padding(0, 1)
+
+	placeholderStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.AdaptiveColor{Dark: "#6B7280", Light: "#9CA3AF"}).
+				Italic(true)
+)
+
 func initialSingleLineModel() singleLineModel {
 	ti := textinput.New()
-	ti.Placeholder = "what do you want to do? :)"
+	ti.Placeholder = "What would you like to do today?✨ "
 	ti.Focus()
-	ti.Prompt = "▶︎"
-	ti.Width = pterm.GetTerminalWidth() - 2
+	ti.Prompt = "❯ "
+	ti.PromptStyle = inputPromptStyle
+	ti.PlaceholderStyle = placeholderStyle
+	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Dark: "#F3F4F6", Light: "#1F2937"})
+	ti.Width = pterm.GetTerminalWidth() - 6
 	// 初始化补全项
 	completions := []*CompletionItem{}
 	// 初始化滑动窗口，最多显示5项
@@ -167,6 +220,15 @@ func (m singleLineModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	keyMsg := false
 	switch msg := msg.(type) {
+	case AppendTextMsg:
+		// 处理外部追加文本的消息
+		currentValue := m.textInput.Value()
+		newValue := currentValue
+		newValue += msg.Text
+		newValue += " "
+		m.textInput.SetValue(newValue)
+		m.textInput.SetCursor(len([]rune(newValue)))
+		return m, nil
 	case tea.KeyMsg:
 		keyMsg = true
 		switch msg.Type {
@@ -398,24 +460,39 @@ type InputOptions struct {
 
 func (options *InputOptions) String() string {
 	width := pterm.GetTerminalWidth() * 7 / 10
-	color := lipgloss.AdaptiveColor{Dark: "#87ff00", Light: "#409C07"}
+
+	// 定义渐变色调色板
+	primaryColor := lipgloss.AdaptiveColor{Dark: "#A78BFA", Light: "#7C3AED"}
+	secondaryColor := lipgloss.AdaptiveColor{Dark: "#818CF8", Light: "#6366F1"}
+	accentColor := lipgloss.AdaptiveColor{Dark: "#34D399", Light: "#10B981"}
+	mutedColor := lipgloss.AdaptiveColor{Dark: "#9CA3AF", Light: "#6B7280"}
 
 	// 构建状态信息
 	var statusLines []string
 
-	// 主模型信息
+	// 主模型信息 - 使用图标
 	if options.Model != "" {
-		statusLines = append(statusLines, locales.Sprintf("MainModel: %s", options.Model))
+		modelStyle := lipgloss.NewStyle().Foreground(primaryColor).Bold(true)
+		labelStyle := lipgloss.NewStyle().Foreground(mutedColor)
+		statusLines = append(statusLines, labelStyle.Render("🤖 Model: ")+modelStyle.Render(options.Model))
 	}
 
-	// 会话ID
+	// 会话ID - 使用图标
 	if options.SessionId != "" {
-		statusLines = append(statusLines, locales.Sprintf("SessionId: %s", options.SessionId))
+		sessionStyle := lipgloss.NewStyle().Foreground(secondaryColor)
+		labelStyle := lipgloss.NewStyle().Foreground(mutedColor)
+		statusLines = append(statusLines, labelStyle.Render("📋 Session: ")+sessionStyle.Render(options.SessionId))
 	}
 
-	// 模式
+	// 模式 - 使用图标和高亮
 	if options.Mode != "" {
-		statusLines = append(statusLines, locales.Sprintf("Mode: %s", options.Mode))
+		modeStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Dark: "#1F2937", Light: "#FFFFFF"}).
+			Background(accentColor).
+			Padding(0, 1).
+			Bold(true)
+		labelStyle := lipgloss.NewStyle().Foreground(mutedColor)
+		statusLines = append(statusLines, labelStyle.Render("⚡ Mode: ")+modeStyle.Render(options.Mode))
 	}
 
 	// 如果没有状态信息，返回空字符串
@@ -426,9 +503,7 @@ func (options *InputOptions) String() string {
 	// 创建状态文本
 	statusText := strings.Join(statusLines, "\n")
 	bergoStatus := lipgloss.NewStyle().
-		Foreground(color).
 		Width(width).
-		Bold(true).
 		Render(statusText)
 
 	// 获取token使用情况
@@ -437,14 +512,20 @@ func (options *InputOptions) String() string {
 	// 组合状态和token使用情况
 	content := lipgloss.JoinVertical(lipgloss.Left, bergoStatus, tokenUsage)
 
-	// 使用ThickBorder创建更美观的边框
-	return lipgloss.NewStyle().
-		Border(lipgloss.ThickBorder()).
-		BorderForeground(color).
-		Padding(0, 1).
-		BorderLeft(true).
-		BorderTop(false).
-		BorderRight(false).
-		BorderBottom(false).
-		Render(content) + "\n"
+	// 创建标题栏
+	titleStyle := lipgloss.NewStyle().
+		Foreground(primaryColor).
+		Bold(true)
+	title := titleStyle.Render("┃ ") + lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Dark: "#F3F4F6", Light: "#1F2937"}).
+		Bold(true).
+		Render("BERGO ")
+
+	// 使用更现代的边框样式
+	boxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(primaryColor).
+		Padding(0, 1)
+
+	return title + "\n" + boxStyle.Render(content) + "\n"
 }

@@ -126,20 +126,6 @@ func (a *Agent) Run(ctx context.Context, input *tools.AgentInput) *tools.AgentOu
 	}
 	return &tools.AgentOutput{}
 }
-func (a *Agent) captureSignal(cancel context.CancelFunc) {
-	//capture signal
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	go func() {
-		<-signalChan
-		cancel()
-		signal.Reset(os.Interrupt)
-	}()
-}
-func StopGap() {
-	var input string
-	fmt.Scanf("%s", &input)
-}
 
 func isChanClose(signalChan chan os.Signal) bool {
 	select {
@@ -153,6 +139,7 @@ func (a *Agent) doTask(ctx context.Context) {
 	defer utils.HideMementoFile(a.sessionId)
 	defer func() {
 		a.timeline.UpdateTokenUsage(a.stats.TokenUsageSession)
+		a.timeline.Store()
 	}()
 	//clean tail tool calls
 	a.timeline.CleanTailToolCalls()
@@ -185,15 +172,7 @@ func (a *Agent) doTask(ctx context.Context) {
 		}
 		keepGoing = false
 		chatItems := a.timeline.GetChatContext(true)
-		if cli.Debug {
-			reasoningItem := 0
-			for _, item := range chatItems {
-				if item.Role == "assistant" && len(item.ReasoningContent) > 0 {
-					reasoningItem++
-				}
-			}
-			cli.PrintDebugText("len of chatItems: %d, reasoningItem: %d", len(chatItems), reasoningItem)
-		}
+
 		chatItems = llm.InjectSystemPrompt(chatItems, prompt.GetSystemPrompt())
 		ctxWithCancel, cancel := context.WithCancel(context.Background())
 		cli.SetCancelFunc(cancel)
@@ -292,7 +271,7 @@ func (a *Agent) doTask(ctx context.Context) {
 		}
 		if len(toolCallAnswers) > 0 {
 			for _, answer := range toolCallAnswers {
-				a.timeline.AddToolCallResult(answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content, answer.Rendered)
+				a.timeline.AddToolCallResult(answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content, answer.ImgPath, answer.Rendered)
 				cli.PrintDebugText("%s\n%s\n%s\n", answer.ToolCall.ID, answer.ToolCall.Function.Name, answer.Content)
 			}
 		}
@@ -320,6 +299,16 @@ func (a *Agent) getCliInput() berio.BerInput {
 	})
 }
 func (a *Agent) readFromUser() string {
+	// 启动文件监听
+	watcher, err := utils.NewFileWatcher(".", func(filePath string) {
+		// 当检测到包含 @bergo 的文件时，追加到输入框
+		cli.AppendToInput("@file:" + filePath)
+	})
+	if err == nil {
+		watcher.Start()
+		defer watcher.Stop()
+	}
+
 	receiver := a.getCliInput()
 	if a.multiline {
 		a.multiline = false
@@ -389,11 +378,8 @@ func (a *Agent) doToolUse(ctx context.Context, call *llm.ToolCall) (*tools.Agent
 			rendered = desc.OutputFunc(call, answer.Content)
 			a.output.OnSystemMsg(rendered, berio.MsgTypeDump)
 		}
-		return &tools.AgentOutput{
-			Content:  answer.Content,
-			ToolCall: answer.ToolCall,
-			Rendered: rendered,
-		}, nil
+		answer.Rendered = rendered
+		return answer, nil
 
 	}
 	return nil, nil

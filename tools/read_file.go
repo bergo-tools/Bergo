@@ -72,7 +72,7 @@ func ReadFileSchema() *llm.ToolSchema {
 		Type: "function",
 		Function: llm.ToolFunctionDefinition{
 			Name:        TOOL_READ_FILE,
-			Description: "read_file是用来读取文件的一个工具，它会在每一行的开头添加行号。一轮响应应该只包含一次读取操作。如果文件太长，可能会遇到line_budget限制，可以使用begin和end参数来指定要读取的行范围。",
+			Description: "read_file是用来读取文本文件的一个工具，它会在每一行的开头添加行号。一轮响应应该只包含一次读取操作。如果文件太长，可能会遇到line_budget限制，可以使用begin和end参数来指定要读取的行范围。",
 			Parameters: llm.ToolParameters{
 				Type: "object",
 				Properties: map[string]llm.ToolProperty{

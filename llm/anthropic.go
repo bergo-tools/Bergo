@@ -194,12 +194,27 @@ func (p *AnthropicProvider) convertMessages(chatItems []*ChatItem) (system strin
 		case "tool":
 			blocks := make([]AnthropicContentBlock, 0)
 			for ; i < len(chatItems) && chatItems[i].Role == "tool"; i++ {
-				blocks = append(blocks, AnthropicContentBlock{
+				toolBlock := AnthropicContentBlock{
 					Type:         "tool_result",
 					ToolUseID:    chatItems[i].ToolCallId,
-					Content:      chatItems[i].Message,
 					CacheControl: &AnthropicCacheControl{Type: "ephemeral"},
-				})
+					Content:      chatItems[i].Message,
+				}
+
+				blocks = append(blocks, toolBlock)
+				if chatItems[i].Img != "" {
+					mediaType, base64Data := parseDataURL(chatItems[i].Img)
+					if base64Data != "" {
+						blocks = append(blocks, AnthropicContentBlock{
+							Type: "image",
+							Source: &AnthropicImageSource{
+								Type:      "base64",
+								MediaType: mediaType,
+								Data:      base64Data,
+							},
+						})
+					}
+				}
 			}
 			i--
 			messages = append(messages, AnthropicMessage{

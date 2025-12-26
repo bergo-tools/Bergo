@@ -120,7 +120,6 @@ func (t *Timeline) AddUserInput(input *Query) {
 		GitHash: "",
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 func (t *Timeline) ReplaceLastUserInput(input *Query) {
@@ -134,23 +133,24 @@ func (t *Timeline) ReplaceLastUserInput(input *Query) {
 			return
 		}
 	}
-	t.Store()
 }
 
 type ToolCallResult struct {
 	ToolId   string
 	ToolName string
 	Content  string
+	ImgPath  string // 图片文件路径，在转换为 ChatItem 时再读取
 	Rendered string
 }
 
-func (t *Timeline) AddToolCallResult(toolId string, toolName string, content string, rendered string) {
+func (t *Timeline) AddToolCallResult(toolId string, toolName string, content string, imgPath string, rendered string) {
 	t.Items = append(t.Items, &TimelineItem{
 		Type: TL_ToolUse,
 		Data: &ToolCallResult{
 			ToolId:   toolId,
 			ToolName: toolName,
 			Content:  content,
+			ImgPath:  imgPath,
 			Rendered: rendered,
 		},
 		Ts:      time.Now().Unix(),
@@ -158,7 +158,6 @@ func (t *Timeline) AddToolCallResult(toolId string, toolName string, content str
 		GitHash: "",
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 // CheckpointData 用于存储checkpoint的数据
@@ -226,7 +225,6 @@ func (t *Timeline) GetLastCheckpointTokenUsage(isReload bool) llm.TokenUsage {
 // UpdateTokenUsage 更新最新的token用量并持久化
 func (t *Timeline) UpdateTokenUsage(tokenUsage llm.TokenUsage) {
 	t.LatestTokenUsage = tokenUsage
-	t.Store()
 }
 
 type LLMResponseItem struct {
@@ -247,7 +245,6 @@ func (t *Timeline) AddLLMResponse(content string, reasoningContent string, rende
 		Epoch:   t.TaskEpoch,
 	})
 	t.MaxId = t.MaxId + 1
-	t.Store()
 }
 
 func (t *Timeline) AddCompact() {
@@ -273,7 +270,6 @@ func (t *Timeline) CleanTailToolCalls() {
 	if t.Items[len(t.Items)-1].Type == TL_LLMResponse {
 		t.Items[len(t.Items)-1].Data.(*LLMResponseItem).ToolCalls = nil
 	}
-	t.Store()
 }
 
 func (t *Timeline) GetChatContext(addCoT bool) []*llm.ChatItem {
@@ -288,11 +284,19 @@ func (t *Timeline) GetChatContext(addCoT bool) []*llm.ChatItem {
 				Img:     query.GetImageDataURL(),
 			})
 		case TL_ToolUse:
-			chats = append(chats, &llm.ChatItem{
+			toolResult := item.Data.(*ToolCallResult)
+			chatItem := &llm.ChatItem{
 				Role:       "tool",
-				Message:    item.Data.(*ToolCallResult).Content,
-				ToolCallId: item.Data.(*ToolCallResult).ToolId,
-			})
+				Message:    toolResult.Content,
+				ToolCallId: toolResult.ToolId,
+			}
+			// 如果有图片路径，读取图片并转换为 data URL
+			if toolResult.ImgPath != "" {
+				if dataURL, err := GetImageDataURL(toolResult.ImgPath); err == nil {
+					chatItem.Img = dataURL
+				}
+			}
+			chats = append(chats, chatItem)
 		case TL_Compact:
 			chats = make([]*llm.ChatItem, 0)
 			if item.Data != nil {

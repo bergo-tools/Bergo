@@ -140,16 +140,14 @@ func (a *Agent) revertCmd(input string) (string, bool) {
 }
 
 func (a *Agent) loadSessionCmd(input string) (string, bool) {
-	oldSessionId := a.sessionId
 	sessionList := utils.GetSessionList()
 	var sessionItems []cli.SessionItem
 	for _, item := range sessionList {
-		if item.SessionId == oldSessionId {
-			continue
-		}
 		sessionItems = append(sessionItems, item)
 	}
-	slCli := cli.SessionList{}
+	slCli := cli.SessionList{
+		CurrentSessionId: a.sessionId,
+	}
 	selected, updatedItems, err := slCli.Show(sessionItems)
 	if err != nil {
 		a.output.OnSystemMsg(locales.Sprintf("show session list failed: %v", err), berio.MsgTypeWarning)

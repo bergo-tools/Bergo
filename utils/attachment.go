@@ -48,11 +48,16 @@ func GetImageMimeType(path string) string {
 
 // GetImageDataURL 读取图片并返回 base64 data URL
 func (a *Attachment) GetImageDataURL() (string, error) {
-	data, err := os.ReadFile(a.Path)
+	return GetImageDataURL(a.Path)
+}
+
+// GetImageDataURL 根据路径读取图片并返回 base64 data URL
+func GetImageDataURL(path string) (string, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
-	mime := GetImageMimeType(a.Path)
+	mime := GetImageMimeType(path)
 	base64Data := base64.StdEncoding.EncodeToString(data)
 	return "data:" + mime + ";base64," + base64Data, nil
 }
